@@ -1,7 +1,11 @@
 # wbindkeys
 A wayland replacement for xbindkeys
 
-**This project is currently under construction and is not usable**
+🚧 **This project is currently under construction** 🚧 
+
+You can basically only bind functions to Alt+A and Alt+B and even then not many userspace applications will work because we still need to sort out user privelege and bringing in your variables since it runs as root... for now.
+
+I have really only been able to get it to launch xterm bound to ALT+A.
 
 ## Philosophy 
 
@@ -32,5 +36,25 @@ end)
 # Roadmap
 - [x] Hook into wayland keyboard events
 - [x] Get a binding to execute a print from a lua binding config
-- [ ] Execute the command 
+- [x] Execute the command 
 - [ ] Implement full range of keymaps
+- [ ] Fix for launching app in userspace on the users privelege level
+
+
+# Development Setup 
+
+```sh
+./configure
+make
+```
+
+The following configuration allows usage without sudo:
+
+```sh
+sudo usermod -aG input yourusername
+```
+Creating a udev rule involves creating a file in /etc/udev/rules.d/ (e.g., 99-input.rules) with contents along the lines of:
+
+```
+ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", MODE="660", GROUP="input"
+```
