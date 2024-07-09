@@ -1,7 +1,8 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Event, Libinput, LibinputInterface};
-use mlua::{Function, Lua, Table};
-use libc::{getegid, geteuid, getgid, setgid, setuid, O_RDONLY, O_RDWR, O_WRONLY};
+use libc::{getegid, geteuid, setgid, setuid, O_RDONLY, O_RDWR, O_WRONLY};
+use mlua::Lua;
+use parser::{parse_binding, Keys};
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
@@ -9,6 +10,8 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::{env, u32};
+
+mod parser;
 
 struct Interface;
 
@@ -31,52 +34,27 @@ impl LibinputInterface for Interface {
     }
 }
 
-enum Keys {
-    A = 30,
-    B = 31,
-    LeftMod = 125,
-    LeftAlt = 56,
-}
-
 #[derive(Debug)]
 enum Bindtype {
     Command(String),
     Function(mlua::Function<'static>),
 }
 
-fn parse_binding(binding: &str) -> Vec<u32> {
-    let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
-
-    let mut keys = Vec::new();
-    for string in strings {
-        match string.as_str() {
-            "Alt" => keys.push(Keys::LeftAlt as u32),
-            "A" => keys.push(Keys::A as u32),
-            _ => {}
-        }
-    }
-    keys
-}
-
 fn run_command_as_user(command: &str) {
-    // Get the effective user ID and group ID
     let uid = unsafe { geteuid() };
     let gid = unsafe { getegid() };
 
-    // Capture the environment variables
     let env_vars: Vec<(String, String)> = env::vars().collect();
 
-    // Fork a new process
+    // Fork a new process, unsafe, here be dragons!
     match unsafe { libc::fork() } {
         -1 => panic!("Fork failed"),
         0 => {
-            // Child process: Drop privileges and execute the command
             unsafe {
                 setgid(gid);
                 setuid(uid);
             }
 
-            // Set environment variables
             for (key, value) in env_vars {
                 env::set_var(key, value);
             }
@@ -93,7 +71,6 @@ fn run_command_as_user(command: &str) {
             std::process::exit(0);
         }
         _ => {
-            // Parent process: Wait for the child to finish
             let mut status = 0;
             unsafe { libc::wait(&mut status) };
         }
@@ -105,7 +82,7 @@ fn main() {
     input.udev_assign_seat("seat0").unwrap();
 
     let lua = Lua::new();
-    let lua =  Box::leak(Box::new(lua));
+    let lua = Box::leak(Box::new(lua));
     let actions: HashMap<Vec<u32>, Bindtype> = HashMap::new();
     let actions = Arc::new(Mutex::new(actions));
 
@@ -126,16 +103,18 @@ fn main() {
             .unwrap();
         lua.globals().set("bind", basic_bind).unwrap();
 
-        let fun_bind = lua.create_function(move |_, (binding, target): (String, mlua::Function)| {
-            println!("Binding key: {:?}", binding);
-            println!("Target: {:?}", target);
-            let mut actions_lock = actions_fun.lock().unwrap();
-            let binding = parse_binding(&binding);
-            
-            let target = Bindtype::Function(target);
-            actions_lock.insert(binding, target);
-            Ok(())
-        }).unwrap();
+        let fun_bind = lua
+            .create_function(move |_, (binding, target): (String, mlua::Function)| {
+                println!("Binding key: {:?}", binding);
+                println!("Target: {:?}", target);
+                let mut actions_lock = actions_fun.lock().unwrap();
+                let binding = parse_binding(&binding);
+
+                let target = Bindtype::Function(target);
+                actions_lock.insert(binding, target);
+                Ok(())
+            })
+            .unwrap();
         lua.globals().set("bind_fn", fun_bind).unwrap();
     }
 
@@ -146,12 +125,13 @@ fn main() {
                 print("Hello from lua")
                 os.execute("xterm")
             end)
+            bind("Alt+C", "slack")
+            bind("Ctrl+Y", "firefox")
             print("lol")
         "#;
         let result = lua.load(script).exec();
         println!("Result output {:?}", result);
 
-        //execute all actions
         for (key, action) in actions.lock().unwrap().iter() {
             println!("Registered Function: Key: {:?}, Action: {:?}", key, action);
         }
@@ -166,26 +146,23 @@ fn main() {
                     let key = kb_event.key();
                     let state = kb_event.key_state();
 
-                    if key == Keys::LeftAlt as u32 && state == KeyState::Pressed {
-                        active_keys.push(key);
-                    }
-                    if key == Keys::LeftAlt as u32 && state == KeyState::Released {
-                        active_keys.clear();
+                    if key == Keys::LeftAlt as u32 || key == Keys::LeftCtrl as u32 {
+                        match state {
+                            KeyState::Pressed => active_keys.push(key),
+                            KeyState::Released => active_keys.clear(),
+                        }
                     }
 
-                    // A merge of active keys and the current key pressed
                     let total_combo = active_keys
                         .iter()
                         .chain(std::iter::once(&key))
                         .copied()
                         .collect::<Vec<u32>>();
 
-                    // is there something in the actions map that contains all of
-                    // the keys in the total_combo
                     if let Some(action) = actions.lock().unwrap().get(&total_combo) {
                         if state == KeyState::Pressed {
                             println!("Action: {:?}", action);
-                            
+
                             match action {
                                 Bindtype::Function(func) => {
                                     let result = func.call::<_, ()>(());
@@ -197,7 +174,6 @@ fn main() {
                             }
                         }
                     }
-
                 }
                 _ => {} // Ignore non-keyboard events
             }
