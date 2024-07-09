@@ -31,6 +31,6 @@ end)
 
 # Roadmap
 - [x] Hook into wayland keyboard events
-- [ ] Get a bindint to execute a print from a lua binding config
+- [x] Get a binding to execute a print from a lua binding config
 - [ ] Execute the command 
 - [ ] Implement full range of keymaps
