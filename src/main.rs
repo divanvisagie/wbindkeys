@@ -30,12 +30,20 @@ impl LibinputInterface for Interface {
         drop(File::from(fd));
     }
 }
+
 enum Keys {
     A = 30,
     B = 31,
     LeftMod = 125,
     LeftAlt = 56,
 }
+
+#[derive(Debug)]
+enum Bindtype {
+    Command(String),
+    Function(mlua::Function<'static>),
+}
+
 fn parse_binding(binding: &str) -> Vec<u32> {
     let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
 
@@ -49,6 +57,7 @@ fn parse_binding(binding: &str) -> Vec<u32> {
     }
     keys
 }
+
 fn run_command_as_user(command: &str) {
     // Get the effective user ID and group ID
     let uid = unsafe { geteuid() };
@@ -89,48 +98,62 @@ fn run_command_as_user(command: &str) {
             unsafe { libc::wait(&mut status) };
         }
     }
-}fn main() {
+}
+
+fn main() {
     let mut input = Libinput::new_with_udev(Interface);
     input.udev_assign_seat("seat0").unwrap();
 
     let lua = Lua::new();
-    let actions: HashMap<Vec<u32>, String> = HashMap::new();
-    let lua = Arc::new(Mutex::new(lua));
+    let lua =  Box::leak(Box::new(lua));
+    let actions: HashMap<Vec<u32>, Bindtype> = HashMap::new();
     let actions = Arc::new(Mutex::new(actions));
 
     {
-        let lua = Arc::clone(&lua);
-        let actions = Arc::clone(&actions);
+        let actions_str = Arc::clone(&actions);
+        let actions_fun = Arc::clone(&actions);
 
-        let lock = lua.lock().unwrap();
-        let r = lock
+        let basic_bind = lua
             .create_function(move |_, (binding, target): (String, String)| {
                 println!("Binding key: {:?}", binding);
                 println!("Target: {:?}", target);
-                let mut actions_lock = actions.lock().unwrap();
+                let mut actions_lock = actions_str.lock().unwrap();
                 let binding = parse_binding(&binding);
+                let target = Bindtype::Command(target);
                 actions_lock.insert(binding, target);
                 Ok(())
             })
             .unwrap();
-        lock.globals().set("bind", r).unwrap();
+        lua.globals().set("bind", basic_bind).unwrap();
+
+        let fun_bind = lua.create_function(move |_, (binding, target): (String, mlua::Function)| {
+            println!("Binding key: {:?}", binding);
+            println!("Target: {:?}", target);
+            let mut actions_lock = actions_fun.lock().unwrap();
+            let binding = parse_binding(&binding);
+            
+            let target = Bindtype::Function(target);
+            actions_lock.insert(binding, target);
+            Ok(())
+        }).unwrap();
+        lua.globals().set("bind_fn", fun_bind).unwrap();
     }
 
     {
-        let lua = lua.clone();
         let actions = actions.clone();
         let script = r#"
-            bind("Alt+A", "xterm")
-            bind("Alt+B", "ls")
+            bind_fn("Alt+A", function()
+                print("Hello from lua")
+                os.execute("xterm")
+            end)
             print("lol")
         "#;
-        let lock = lua.lock().unwrap();
-        let result = lock.load(script).exec();
+        let result = lua.load(script).exec();
         println!("Result output {:?}", result);
 
         //execute all actions
         for (key, action) in actions.lock().unwrap().iter() {
-            println!("Key: {:?}, Action: {:?}", key, action);
+            println!("Registered Function: Key: {:?}, Action: {:?}", key, action);
         }
     }
 
@@ -162,12 +185,16 @@ fn run_command_as_user(command: &str) {
                     if let Some(action) = actions.lock().unwrap().get(&total_combo) {
                         if state == KeyState::Pressed {
                             println!("Action: {:?}", action);
-
-                            // execute action as command
-                            // Command::new(action)
-                            //     .spawn()
-                            //     .expect("Failed to execute command");
-                            run_command_as_user(action)
+                            
+                            match action {
+                                Bindtype::Function(func) => {
+                                    let result = func.call::<_, ()>(());
+                                    println!("Result output {:?}", result);
+                                }
+                                Bindtype::Command(command) => {
+                                    run_command_as_user(command);
+                                }
+                            }
                         }
                     }
 
