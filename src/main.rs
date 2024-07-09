@@ -1,15 +1,14 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Event, Libinput, LibinputInterface};
 use mlua::{Function, Lua, Table};
-
-use libc::{O_RDONLY, O_RDWR, O_WRONLY};
+use libc::{getegid, geteuid, getgid, setgid, setuid, O_RDONLY, O_RDWR, O_WRONLY};
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
-use std::u32;
+use std::{env, u32};
 
 struct Interface;
 
@@ -34,8 +33,6 @@ impl LibinputInterface for Interface {
 enum Keys {
     A = 30,
     B = 31,
-    C = ,
-    D = 32,
     LeftMod = 125,
     LeftAlt = 56,
 }
@@ -52,7 +49,47 @@ fn parse_binding(binding: &str) -> Vec<u32> {
     }
     keys
 }
-fn main() {
+fn run_command_as_user(command: &str) {
+    // Get the effective user ID and group ID
+    let uid = unsafe { geteuid() };
+    let gid = unsafe { getegid() };
+
+    // Capture the environment variables
+    let env_vars: Vec<(String, String)> = env::vars().collect();
+
+    // Fork a new process
+    match unsafe { libc::fork() } {
+        -1 => panic!("Fork failed"),
+        0 => {
+            // Child process: Drop privileges and execute the command
+            unsafe {
+                setgid(gid);
+                setuid(uid);
+            }
+
+            // Set environment variables
+            for (key, value) in env_vars {
+                env::set_var(key, value);
+            }
+
+            let output = Command::new("sh")
+                .arg("-c")
+                .arg(command)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+                .expect("Failed to execute command");
+
+            println!("Command output: {:?}", output);
+            std::process::exit(0);
+        }
+        _ => {
+            // Parent process: Wait for the child to finish
+            let mut status = 0;
+            unsafe { libc::wait(&mut status) };
+        }
+    }
+}fn main() {
     let mut input = Libinput::new_with_udev(Interface);
     input.udev_assign_seat("seat0").unwrap();
 
@@ -83,7 +120,8 @@ fn main() {
         let lua = lua.clone();
         let actions = actions.clone();
         let script = r#"
-            bind("Alt+A", "gnome-terminal")
+            bind("Alt+A", "xterm")
+            bind("Alt+B", "ls")
             print("lol")
         "#;
         let lock = lua.lock().unwrap();
@@ -126,9 +164,10 @@ fn main() {
                             println!("Action: {:?}", action);
 
                             // execute action as command
-                            Command::new(action)
-                                .spawn()
-                                .expect("Failed to execute command");
+                            // Command::new(action)
+                            //     .spawn()
+                            //     .expect("Failed to execute command");
+                            run_command_as_user(action)
                         }
                     }
 
