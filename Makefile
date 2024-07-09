@@ -9,6 +9,9 @@ build: src/main.rs
 clean: 
 	cargo clean
 
+check: 
+	cargo check
+
 run: build
 	sudo ./target/debug/$(BIN)
 
