@@ -1,5 +1,6 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
-use input::{Libinput, LibinputInterface, Event};
+use input::{Event, Libinput, LibinputInterface};
+use mlua::{Function, Lua, Table};
 
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use std::fs::{File, OpenOptions};
@@ -23,7 +24,6 @@ impl LibinputInterface for Interface {
     }
 }
 
-
 fn key_to_string(key: u32) -> &'static str {
     match key {
         30 => "A",
@@ -37,14 +37,38 @@ fn key_to_string(key: u32) -> &'static str {
 enum Keys {
     A = 30,
     B = 31,
-    LeftAlt = 56,
     LeftMod = 125,
+    LeftAlt = 56,
 }
 
 fn main() {
     let mut input = Libinput::new_with_udev(Interface);
     input.udev_assign_seat("seat0").unwrap();
 
+    let lua = Lua::new();
+    
+    let r = lua.create_function(|_, (binding, target): (String, Function)| {
+        println!("Binding key: {:?}", binding);
+        println!("Target: {:?}", target);
+        target.call::<_, ()>(()).unwrap();
+        Ok(())
+    }).unwrap();
+
+    lua.globals().set("bind", r).unwrap();
+    // Sample Lua script
+    let script = r#"
+        -- Run a Lua function when calling
+        bind("alt+T", function()
+            print("Alt key pressed")
+            local result = os.execute("ls -l")
+            print("Result: ", result)
+        end) 
+        print("lol");
+    "#;
+    let lua_ctx = lua.load(script);
+    let result = lua_ctx.exec(); 
+    println!("Result output {:?}", result);
+   
     let mut active_keys = Vec::new();
     loop {
         input.dispatch().unwrap();
@@ -67,8 +91,7 @@ fn main() {
                     if active_keys.contains(&(Keys::LeftAlt as u32)) && key == Keys::A as u32 {
                         println!("Alt + A pressed");
                     }
-
-                },
+                }
                 _ => {} // Ignore non-keyboard events
             }
         }
