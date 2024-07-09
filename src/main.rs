@@ -77,65 +77,93 @@ fn run_command_as_user(command: &str) {
     }
 }
 
+struct LuaManager {
+    lua: &'static Lua,
+    actions: Arc<Mutex<HashMap<Vec<u32>, Bindtype>>>,
+}
+
+impl LuaManager {
+    fn new() -> Self {
+        let lua = Box::leak(Box::new(Lua::new()));
+        let actions = Arc::new(Mutex::new(HashMap::new()));
+
+        LuaManager { lua, actions }
+    }
+
+    fn register_functions(&self) -> Result<(), mlua::Error> {
+        let actions_str = Arc::clone(&self.actions);
+        let actions_fun = Arc::clone(&self.actions);
+
+        let basic_bind =
+            self.lua
+                .create_function(move |_, (binding, target): (String, String)| {
+                    println!("Binding key: {:?}", binding);
+                    println!("Target: {:?}", target);
+                    let mut actions_lock = actions_str.lock().unwrap();
+                    let binding = parse_binding(&binding);
+                    let target = Bindtype::Command(target);
+                    actions_lock.insert(binding, target);
+                    Ok(())
+                })?;
+        self.lua.globals().set("bind", basic_bind)?;
+
+        let fun_bind =
+            self.lua
+                .create_function(move |_, (binding, target): (String, mlua::Function)| {
+                    println!("Binding key: {:?}", binding);
+                    println!("Target: {:?}", target);
+                    let mut actions_lock = actions_fun.lock().unwrap();
+                    let binding = parse_binding(&binding);
+
+                    let target = Bindtype::Function(target);
+                    actions_lock.insert(binding, target);
+                    Ok(())
+                })?;
+        self.lua.globals().set("bind_fn", fun_bind)?;
+
+        Ok(())
+    }
+
+    fn load_script(&self, script: &str) -> Result<(), mlua::Error> {
+        self.lua.load(script).exec()
+    }
+
+    fn handle_action(&self, total_combo: Vec<u32>, state: KeyState) {
+        if let Some(action) = self.actions.lock().unwrap().get(&total_combo) {
+            if state == KeyState::Pressed {
+                println!("Action: {:?}", action);
+
+                match action {
+                    Bindtype::Function(func) => {
+                        let result = func.call::<_, ()>(());
+                        println!("Result output {:?}", result);
+                    }
+                    Bindtype::Command(command) => {
+                        run_command_as_user(command);
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn main() {
     let mut input = Libinput::new_with_udev(Interface);
     input.udev_assign_seat("seat0").unwrap();
 
-    let lua = Lua::new();
-    let lua = Box::leak(Box::new(lua));
-    let actions: HashMap<Vec<u32>, Bindtype> = HashMap::new();
-    let actions = Arc::new(Mutex::new(actions));
+    let lua_manager = LuaManager::new();
+    lua_manager.register_functions().unwrap();
 
-    {
-        let actions_str = Arc::clone(&actions);
-        let actions_fun = Arc::clone(&actions);
-
-        let basic_bind = lua
-            .create_function(move |_, (binding, target): (String, String)| {
-                println!("Binding key: {:?}", binding);
-                println!("Target: {:?}", target);
-                let mut actions_lock = actions_str.lock().unwrap();
-                let binding = parse_binding(&binding);
-                let target = Bindtype::Command(target);
-                actions_lock.insert(binding, target);
-                Ok(())
-            })
-            .unwrap();
-        lua.globals().set("bind", basic_bind).unwrap();
-
-        let fun_bind = lua
-            .create_function(move |_, (binding, target): (String, mlua::Function)| {
-                println!("Binding key: {:?}", binding);
-                println!("Target: {:?}", target);
-                let mut actions_lock = actions_fun.lock().unwrap();
-                let binding = parse_binding(&binding);
-
-                let target = Bindtype::Function(target);
-                actions_lock.insert(binding, target);
-                Ok(())
-            })
-            .unwrap();
-        lua.globals().set("bind_fn", fun_bind).unwrap();
-    }
-
-    {
-        let actions = actions.clone();
-        let script = r#"
-            bind_fn("Alt+A", function()
-                print("Hello from lua")
-                os.execute("xterm")
-            end)
-            bind("Alt+C", "slack")
-            bind("Ctrl+Y", "firefox")
-            print("lol")
-        "#;
-        let result = lua.load(script).exec();
-        println!("Result output {:?}", result);
-
-        for (key, action) in actions.lock().unwrap().iter() {
-            println!("Registered Function: Key: {:?}, Action: {:?}", key, action);
-        }
-    }
+    let script = r#"
+        bind_fn("Alt+A", function()
+            print("Hello from lua")
+            os.execute("xterm")
+        end)
+        bind("Alt+C", "slack")
+        bind("Ctrl+Y", "firefox")
+        print("lol")
+    "#;
+    lua_manager.load_script(script).unwrap();
 
     let mut active_keys = Vec::new();
     loop {
@@ -146,7 +174,11 @@ fn main() {
                     let key = kb_event.key();
                     let state = kb_event.key_state();
 
-                    if key == Keys::LeftAlt as u32 || key == Keys::LeftCtrl as u32 {
+                    if key == Keys::LeftAlt as u32
+                        || key == Keys::LeftCtrl as u32
+                        || key == Keys::LeftMod as u32
+                        || key == Keys::Space as u32
+                    {
                         match state {
                             KeyState::Pressed => active_keys.push(key),
                             KeyState::Released => active_keys.clear(),
@@ -159,21 +191,7 @@ fn main() {
                         .copied()
                         .collect::<Vec<u32>>();
 
-                    if let Some(action) = actions.lock().unwrap().get(&total_combo) {
-                        if state == KeyState::Pressed {
-                            println!("Action: {:?}", action);
-
-                            match action {
-                                Bindtype::Function(func) => {
-                                    let result = func.call::<_, ()>(());
-                                    println!("Result output {:?}", result);
-                                }
-                                Bindtype::Command(command) => {
-                                    run_command_as_user(command);
-                                }
-                            }
-                        }
-                    }
+                    lua_manager.handle_action(total_combo, state);
                 }
                 _ => {} // Ignore non-keyboard events
             }
