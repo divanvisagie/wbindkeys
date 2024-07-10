@@ -13,17 +13,24 @@ While wbindkeys intends to replace xbindkeys, in the spirit of wayland being a r
 wbindkeys uses lua for maximum configurability, because sometimes you need an if statement in your config.
 
 ### Config Example
+
+Save the following config in a file named `init.lua` inside your configuration directory (typically found using the `$XDG_CONFIG_HOME` environment variable or defaulting to `~/.config/wbindkeys/`).
+
 ```lua
 -- Run alacritty on ALT+T
 bind("ALT+A", "alacritty")
 bind("ALT+T", "flatpak run org.telegram.desktop")
 ```
 
+### Loading the Configuration
+
+The config file is automatically loaded from the `config_dir()/wbindkeys/init.lua`. Make sure the configuration file exists, otherwise the application will panic.
+
 # Roadmap to 0.1.0
 - [x] Hook into wayland keyboard events
 - [x] Get a binding to execute a print from a lua binding config
 - [x] Execute the command 
-- [x] Fix for launching app in userspace on the users privelege level
+- [x] Fix for launching app in userspace on the users privilege level
 - [ ] Implement and test full range of keymaps
 - [ ] Debian installer
 
