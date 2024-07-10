@@ -157,11 +157,9 @@ fn main() {
     let script = r#"
         bind_fn("Alt+A", function()
             print("Hello from lua")
-            os.execute("xterm")
+            os.execute("alacritty")
         end)
         bind("Alt+C", "slack")
-        bind("Ctrl+Y", "firefox")
-        print("lol")
     "#;
     lua_manager.load_script(script).unwrap();
 
@@ -192,6 +190,7 @@ fn main() {
                         .collect::<Vec<u32>>();
 
                     lua_manager.handle_action(total_combo, state);
+                    
                 }
                 _ => {} // Ignore non-keyboard events
             }
