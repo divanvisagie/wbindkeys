@@ -1,6 +1,6 @@
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Event, Libinput, LibinputInterface};
-use libc::{getegid, geteuid, setgid, setuid, O_RDONLY, O_RDWR, O_WRONLY};
+use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use mlua::Lua;
 use parser::{parse_binding, Keys};
 use std::collections::HashMap;
@@ -9,7 +9,7 @@ use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
-use std::{env, u32};
+use std::u32;
 
 mod parser;
 
@@ -38,43 +38,6 @@ impl LibinputInterface for Interface {
 enum Bindtype {
     Command(String),
     Function(mlua::Function<'static>),
-}
-
-fn run_command_as_user(command: &str) {
-    let uid = unsafe { geteuid() };
-    let gid = unsafe { getegid() };
-
-    let env_vars: Vec<(String, String)> = env::vars().collect();
-
-    // Fork a new process, unsafe, here be dragons!
-    match unsafe { libc::fork() } {
-        -1 => panic!("Fork failed"),
-        0 => {
-            unsafe {
-                setgid(gid);
-                setuid(uid);
-            }
-
-            for (key, value) in env_vars {
-                env::set_var(key, value);
-            }
-
-            let output = Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output()
-                .expect("Failed to execute command");
-
-            println!("Command output: {:?}", output);
-            std::process::exit(0);
-        }
-        _ => {
-            let mut status = 0;
-            unsafe { libc::wait(&mut status) };
-        }
-    }
 }
 
 struct LuaManager {
@@ -139,7 +102,14 @@ impl LuaManager {
                         println!("Result output {:?}", result);
                     }
                     Bindtype::Command(command) => {
-                        run_command_as_user(command);
+                        // run_command_as_user(command);
+                        Command::new("sh")
+                            .arg("-c")
+                            .arg(command)
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null())
+                            .spawn()
+                            .expect("Failed to execute command");
                     }
                 }
             }
@@ -159,7 +129,7 @@ fn main() {
             print("Hello from lua")
             os.execute("alacritty")
         end)
-        bind("Alt+C", "slack")
+        bind("Alt+C", "alacritty")
     "#;
     lua_manager.load_script(script).unwrap();
 
