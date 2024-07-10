@@ -1,8 +1,10 @@
+use dirs::config_dir;
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::{Event, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use parser::Keys;
 use script_manager::ScriptManager;
+use std::env::join_paths;
 use std::fs::{File, OpenOptions};
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
@@ -39,11 +41,17 @@ fn main() {
     let script_manager = ScriptManager::new();
     script_manager.register_functions().unwrap();
 
-    let script = r#"
-        bind("Alt+A", "alacritty")
-        bind("Alt+C", "flatpak run org.telegram.desktop")
-    "#;
-    script_manager.load_script(script).unwrap();
+    //load from config dir
+    let config_path = config_dir()
+        .expect("Failed to load config directory.")
+        .join("wbindkeys")
+        .join("init.lua");
+
+    if !config_path.exists() {
+        panic!("Config file not found at {:?}", config_path);
+    }
+    let script = std::fs::read_to_string(config_path).unwrap();
+    script_manager.load_script(&script).unwrap();
 
     let mut active_keys = Vec::new();
     loop {
@@ -72,7 +80,6 @@ fn main() {
                         .collect::<Vec<u32>>();
 
                     script_manager.handle_action(total_combo, state);
-                    
                 }
                 _ => {} // Ignore non-keyboard events
             }
