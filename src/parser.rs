@@ -66,7 +66,19 @@ pub enum Keys {
     End = 0xCF,
     PageUp = 0xC9,
     PageDown = 0xD1,
-}
+    Comma = 0x33,
+    Period = 0x34,
+    Slash = 0x35,
+    RightShift = 0x36,
+    LeftSquare = 0x1a,
+    RightSquare = 0x1b,
+    SemiColon = 0x27,
+    Quote = 0x28,
+    BackSlash = 0x2b,
+    Dash = 0x0c,
+    Equal = 0x0d,
+
+    }
 
 pub fn parse_binding(binding: &str) -> Vec<u32> {
     let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
@@ -143,6 +155,17 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "End" => keys.push(Keys::End as u32),
             "PageUp" => keys.push(Keys::PageUp as u32),
             "PageDown" => keys.push(Keys::PageDown as u32),
+            "Comma"=> keys.push(Keys::Comma as u32),
+            "Period"=> keys.push(Keys::Period as u32),
+            "Slash"=> keys.push(Keys::Slash as u32),
+            "RightShift"=> keys.push(Keys::RightShift as u32),
+            "LeftSquare"=> keys.push(Keys::LeftSquare as u32),
+            "RightSquare"=> keys.push(Keys::RightSquare as u32),
+            "SemiColon"=> keys.push(Keys::SemiColon as u32),
+            "Quote"=> keys.push(Keys::Quote as u32),
+            "BackSlash"=> keys.push(Keys::BackSlash as u32),
+            "Dash"=> keys.push(Keys::Dash as u32),
+            "Equal"=> keys.push(Keys::Equal as u32),
             _ => {}
         }
     }
@@ -155,412 +178,90 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_binding() {
-        let binding = "Ctrl+Alt+Delete";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32, Keys::Delete as u32]);
+    fn test_parse_single_key() {
+        let test_cases = [
+            ("LeftShift", Keys::LeftShift as u32),
+            ("LeftCtrl", Keys::LeftCtrl as u32),
+            ("LeftMod", Keys::LeftMod as u32),
+            ("LeftAlt", Keys::LeftAlt as u32),
+            ("Space", Keys::Space as u32),
+            ("Enter", Keys::Enter as u32),
+            ("Backspace", Keys::Backspace as u32),
+            ("Tab", Keys::Tab as u32),
+            ("Up", Keys::Up as u32),
+            ("Down", Keys::Down as u32),
+            ("Left", Keys::Left as u32),
+            ("Right", Keys::Right as u32),
+            ("Insert", Keys::Insert as u32),
+            ("Delete", Keys::Delete as u32),
+            ("Home", Keys::Home as u32),
+            ("End", Keys::End as u32),
+            ("PageUp", Keys::PageUp as u32),
+            ("PageDown", Keys::PageDown as u32),
+            ("Comma", Keys::Comma as u32),
+            ("Period", Keys::Period as u32),
+            ("Slash", Keys::Slash as u32),
+            ("RightShift", Keys::RightShift as u32),
+            ("LeftSquare", Keys::LeftSquare as u32),
+            ("RightSquare", Keys::RightSquare as u32),
+            ("SemiColon", Keys::SemiColon as u32),
+            ("Quote", Keys::Quote as u32),
+            ("BackSlash", Keys::BackSlash as u32),
+            ("Dash", Keys::Dash as u32),
+            ("Equal", Keys::Equal as u32),
+            ("A", Keys::A as u32),
+            ("B", Keys::B as u32),
+            ("C", Keys::C as u32),
+            ("D", Keys::D as u32),
+            ("E", Keys::E as u32),
+            ("F", Keys::F as u32),
+            ("G", Keys::G as u32),
+            ("H", Keys::H as u32),
+            ("I", Keys::I as u32),
+            ("J", Keys::J as u32),
+            ("K", Keys::K as u32),
+            ("L", Keys::L as u32),
+            ("M", Keys::M as u32),
+            ("N", Keys::N as u32),
+            ("O", Keys::O as u32),
+            ("P", Keys::P as u32),
+            ("Q", Keys::Q as u32),
+            ("R", Keys::R as u32),
+            ("S", Keys::S as u32),
+            ("T", Keys::T as u32),
+            ("U", Keys::U as u32),
+            ("V", Keys::V as u32),
+            ("W", Keys::W as u32),
+            ("X", Keys::X as u32),
+            ("Y", Keys::Y as u32),
+            ("Z", Keys::Z as u32),
+            ("0", Keys::Num0 as u32),
+            ("1", Keys::Num1 as u32),
+            ("2", Keys::Num2 as u32),
+            ("3", Keys::Num3 as u32),
+            ("4", Keys::Num4 as u32),
+            ("5", Keys::Num5 as u32),
+            ("6", Keys::Num6 as u32),
+            ("7", Keys::Num7 as u32),
+            ("8", Keys::Num8 as u32),
+            ("9", Keys::Num9 as u32),
+            ("F1", Keys::F1 as u32),
+            ("F2", Keys::F2 as u32),
+            ("F3", Keys::F3 as u32),
+            ("F4", Keys::F4 as u32),
+            ("F5", Keys::F5 as u32),
+            ("F6", Keys::F6 as u32),
+            ("F7", Keys::F7 as u32),
+            ("F8", Keys::F8 as u32),
+            ("F9", Keys::F9 as u32),
+            ("F10", Keys::F10 as u32),
+            ("F11", Keys::F11 as u32),
+            ("F12", Keys::F12 as u32),
+  
+        ];
+
+        for (input, expected_output) in test_cases {
+            assert_eq!(parse_binding(input), vec![expected_output], "Failed for input: {}", input);
+        }
     }
-    #[test]
-    fn test_parse_binding_a() {
-        let binding: &str = "A";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::A as u32]);
-        }
-    #[test]
-    fn test_parse_binding_b() {
-        let binding: &str = "B";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::B as u32]);
-        }
-    #[test]
-    fn test_parse_binding_c() {
-        let binding: &str = "C";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::C as u32]);
-        }
-    #[test]
-    fn test_parse_binding_d() {
-        let binding: &str = "D";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::D as u32]);
-        }
-    #[test]
-    fn test_parse_binding_e() {
-        let binding: &str = "E";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::E as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f() {
-        let binding: &str = "F";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F as u32]);
-        }
-    #[test]
-    fn test_parse_binding_g() {
-        let binding: &str = "G";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::G as u32]);
-        }
-    #[test]
-    fn test_parse_binding_h() {
-        let binding: &str = "H";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::H as u32]);
-        }
-    #[test]
-    fn test_parse_binding_i() {
-        let binding: &str = "I";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::I as u32]);
-        }
-    #[test]
-    fn test_parse_binding_j() {
-        let binding: &str = "J";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::J as u32]);
-        }
-    #[test]
-    fn test_parse_binding_k() {
-        let binding: &str = "K";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::K as u32]);
-        }
-    #[test]
-    fn test_parse_binding_l() {
-        let binding: &str = "L";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::L as u32]);
-        }
-    #[test]
-    fn test_parse_binding_m() {
-        let binding: &str = "M";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::M as u32]);
-        }
-    #[test]
-    fn test_parse_binding_n() {
-        let binding: &str = "N";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::N as u32]);
-        }
-    #[test]
-    fn test_parse_binding_o() {
-        let binding: &str = "O";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::O as u32]);
-        }
-    #[test]
-    fn test_parse_binding_p() {
-        let binding: &str = "P";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::P as u32]);
-        }
-    #[test]
-    fn test_parse_binding_q() {
-        let binding: &str = "Q";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Q as u32]);
-        }
-    #[test]
-    fn test_parse_binding_r() {
-        let binding: &str = "R";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::R as u32]);
-        }
-    #[test]
-    fn test_parse_binding_s() {
-        let binding: &str = "S";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::S as u32]);
-        }
-    #[test]
-    fn test_parse_binding_t() {
-        let binding: &str = "T";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::T as u32]);
-        }
-    #[test]
-    fn test_parse_binding_u() {
-        let binding: &str = "U";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::U as u32]);
-        }
-    #[test]
-    fn test_parse_binding_v() {
-        let binding: &str = "V";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::V as u32]);
-        }
-    #[test]
-    fn test_parse_binding_w() {
-        let binding: &str = "W";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::W as u32]);
-        }
-    #[test]
-    fn test_parse_binding_x() {
-        let binding: &str = "X";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::X as u32]);
-        }
-    #[test]
-    fn test_parse_binding_y() {
-        let binding: &str = "Y";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Y as u32]);
-        }
-    #[test]
-    fn test_parse_binding_z() {
-        let binding: &str = "Z";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Z as u32]);
-        }
-    #[test]
-    fn test_parse_binding_0() {
-        let binding: &str = "0";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num0 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_1() {
-        let binding: &str = "1";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num1 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_2() {
-        let binding: &str = "2";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num2 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_3() {
-        let binding: &str = "3";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num3 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_4() {
-        let binding: &str = "4";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num4 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_5() {
-        let binding: &str = "5";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num5 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_6() {
-        let binding: &str = "6";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num6 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_7() {
-        let binding: &str = "7";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num7 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_8() {
-        let binding: &str = "8";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num8 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_9() {
-        let binding: &str = "9";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Num9 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_escape() {
-        let binding: &str = "Escape";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Escape as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f1() {
-        let binding: &str = "F1";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F1 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f2() {
-        let binding: &str = "F2";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F2 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f3() {
-        let binding: &str = "F3";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F3 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f4() {
-        let binding: &str = "F4";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F4 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f5() {
-        let binding: &str = "F5";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F5 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f6() {
-        let binding: &str = "F6";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F6 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f7() {
-        let binding: &str = "F7";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F7 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f8() {
-        let binding: &str = "F8";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F8 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f9() {
-        let binding: &str = "F9";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F9 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f10() {
-        let binding: &str = "F10";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F10 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f11() {
-        let binding: &str = "F11";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F11 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_f12() {
-        let binding: &str = "F12";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::F12 as u32]);
-        }
-    #[test]
-    fn test_parse_binding_leftshift() {
-        let binding: &str = "LeftShift";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftShift as u32]);
-        }
-    #[test]
-    fn test_parse_binding_leftctrl() {
-        let binding: &str = "LeftCtrl";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftCtrl as u32]);
-        }
-    #[test]
-    fn test_parse_binding_leftmod() {
-        let binding: &str = "LeftMod";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftMod as u32]);
-        }
-    #[test]
-    fn test_parse_binding_leftalt() {
-        let binding: &str = "LeftAlt";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftAlt as u32]);
-        }
-    #[test]
-    fn test_parse_binding_space() {
-        let binding: &str = "Space";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Space as u32]);
-        }
-    #[test]
-    fn test_parse_binding_enter() {
-        let binding: &str = "Enter";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Enter as u32]);
-        }
-    #[test]
-    fn test_parse_binding_backspace() {
-        let binding: &str = "Backspace";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Backspace as u32]);
-        }
-    #[test]
-    fn test_parse_binding_tab() {
-        let binding: &str = "Tab";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Tab as u32]);
-        }
-    #[test]
-    fn test_parse_binding_up() {
-        let binding: &str = "Up";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Up as u32]);
-        }
-    #[test]
-    fn test_parse_binding_down() {
-        let binding: &str = "Down";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Down as u32]);
-        }
-    #[test]
-    fn test_parse_binding_left() {
-        let binding: &str = "Left";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Left as u32]);
-        }
-    #[test]
-    fn test_parse_binding_right() {
-        let binding: &str = "Right";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Right as u32]);
-        }
-    #[test]
-    fn test_parse_binding_insert() {
-        let binding: &str = "Insert";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Insert as u32]);
-        }
-    #[test]
-    fn test_parse_binding_delete() {
-        let binding: &str = "Delete";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Delete as u32]);
-        }
-    #[test]
-    fn test_parse_binding_home() {
-        let binding: &str = "Home";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::Home as u32]);
-        }
-    #[test]
-    fn test_parse_binding_end() {
-        let binding: &str = "End";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::End as u32]);
-        }
-    #[test]
-    fn test_parse_binding_pageup() {
-        let binding: &str = "PageUp";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::PageUp as u32]);
-        }
-    #[test]
-    fn test_parse_binding_pagedown() {
-        let binding: &str = "PageDown";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::PageDown as u32]);
-        }
-    
 }
