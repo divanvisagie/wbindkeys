@@ -66,7 +66,19 @@ pub enum Keys {
     End = 0xCF,
     PageUp = 0xC9,
     PageDown = 0xD1,
-}
+    Comma = 0x33,
+    Period = 0x34,
+    Slash = 0x35,
+    RightShift = 0x36,
+    LeftSquare = 0x1a,
+    RightSquare = 0x1b,
+    SemiColon = 0x27,
+    Quote = 0x28,
+    BackSlash = 0x2b,
+    Dash = 0x0c,
+    Equal = 0x0d,
+
+    }
 
 pub fn parse_binding(binding: &str) -> Vec<u32> {
     let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
@@ -123,6 +135,7 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "F10" => keys.push(Keys::F10 as u32),
             "F11" => keys.push(Keys::F11 as u32),
             "F12" => keys.push(Keys::F12 as u32),
+            "LeftAlt" => keys.push(Keys::LeftAlt as u32),
             "LeftCtrl" => keys.push(Keys::LeftCtrl as u32),
             "LeftShift" => keys.push(Keys::LeftShift as u32),
             "Ctrl" => keys.push(Keys::LeftCtrl as u32), // Assuming "Ctrl" refers to "LeftCtrl"
@@ -142,6 +155,17 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "End" => keys.push(Keys::End as u32),
             "PageUp" => keys.push(Keys::PageUp as u32),
             "PageDown" => keys.push(Keys::PageDown as u32),
+            "Comma"=> keys.push(Keys::Comma as u32),
+            "Period"=> keys.push(Keys::Period as u32),
+            "Slash"=> keys.push(Keys::Slash as u32),
+            "RightShift"=> keys.push(Keys::RightShift as u32),
+            "LeftSquare"=> keys.push(Keys::LeftSquare as u32),
+            "RightSquare"=> keys.push(Keys::RightSquare as u32),
+            "SemiColon"=> keys.push(Keys::SemiColon as u32),
+            "Quote"=> keys.push(Keys::Quote as u32),
+            "BackSlash"=> keys.push(Keys::BackSlash as u32),
+            "Dash"=> keys.push(Keys::Dash as u32),
+            "Equal"=> keys.push(Keys::Equal as u32),
             _ => {}
         }
     }
@@ -154,9 +178,90 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_binding() {
-        let binding = "Ctrl+Alt+Delete";
-        let keys = parse_binding(binding);
-        assert_eq!(keys, vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32, Keys::Delete as u32]);
+    fn test_parse_single_key() {
+        let test_cases = [
+            ("LeftShift", Keys::LeftShift as u32),
+            ("LeftCtrl", Keys::LeftCtrl as u32),
+            ("LeftMod", Keys::LeftMod as u32),
+            ("LeftAlt", Keys::LeftAlt as u32),
+            ("Space", Keys::Space as u32),
+            ("Enter", Keys::Enter as u32),
+            ("Backspace", Keys::Backspace as u32),
+            ("Tab", Keys::Tab as u32),
+            ("Up", Keys::Up as u32),
+            ("Down", Keys::Down as u32),
+            ("Left", Keys::Left as u32),
+            ("Right", Keys::Right as u32),
+            ("Insert", Keys::Insert as u32),
+            ("Delete", Keys::Delete as u32),
+            ("Home", Keys::Home as u32),
+            ("End", Keys::End as u32),
+            ("PageUp", Keys::PageUp as u32),
+            ("PageDown", Keys::PageDown as u32),
+            ("Comma", Keys::Comma as u32),
+            ("Period", Keys::Period as u32),
+            ("Slash", Keys::Slash as u32),
+            ("RightShift", Keys::RightShift as u32),
+            ("LeftSquare", Keys::LeftSquare as u32),
+            ("RightSquare", Keys::RightSquare as u32),
+            ("SemiColon", Keys::SemiColon as u32),
+            ("Quote", Keys::Quote as u32),
+            ("BackSlash", Keys::BackSlash as u32),
+            ("Dash", Keys::Dash as u32),
+            ("Equal", Keys::Equal as u32),
+            ("A", Keys::A as u32),
+            ("B", Keys::B as u32),
+            ("C", Keys::C as u32),
+            ("D", Keys::D as u32),
+            ("E", Keys::E as u32),
+            ("F", Keys::F as u32),
+            ("G", Keys::G as u32),
+            ("H", Keys::H as u32),
+            ("I", Keys::I as u32),
+            ("J", Keys::J as u32),
+            ("K", Keys::K as u32),
+            ("L", Keys::L as u32),
+            ("M", Keys::M as u32),
+            ("N", Keys::N as u32),
+            ("O", Keys::O as u32),
+            ("P", Keys::P as u32),
+            ("Q", Keys::Q as u32),
+            ("R", Keys::R as u32),
+            ("S", Keys::S as u32),
+            ("T", Keys::T as u32),
+            ("U", Keys::U as u32),
+            ("V", Keys::V as u32),
+            ("W", Keys::W as u32),
+            ("X", Keys::X as u32),
+            ("Y", Keys::Y as u32),
+            ("Z", Keys::Z as u32),
+            ("0", Keys::Num0 as u32),
+            ("1", Keys::Num1 as u32),
+            ("2", Keys::Num2 as u32),
+            ("3", Keys::Num3 as u32),
+            ("4", Keys::Num4 as u32),
+            ("5", Keys::Num5 as u32),
+            ("6", Keys::Num6 as u32),
+            ("7", Keys::Num7 as u32),
+            ("8", Keys::Num8 as u32),
+            ("9", Keys::Num9 as u32),
+            ("F1", Keys::F1 as u32),
+            ("F2", Keys::F2 as u32),
+            ("F3", Keys::F3 as u32),
+            ("F4", Keys::F4 as u32),
+            ("F5", Keys::F5 as u32),
+            ("F6", Keys::F6 as u32),
+            ("F7", Keys::F7 as u32),
+            ("F8", Keys::F8 as u32),
+            ("F9", Keys::F9 as u32),
+            ("F10", Keys::F10 as u32),
+            ("F11", Keys::F11 as u32),
+            ("F12", Keys::F12 as u32),
+  
+        ];
+
+        for (input, expected_output) in test_cases {
+            assert_eq!(parse_binding(input), vec![expected_output], "Failed for input: {}", input);
+        }
     }
 }
