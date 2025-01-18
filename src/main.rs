@@ -4,7 +4,6 @@ use input::{Event, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use parser::Keys;
 use script_manager::ScriptManager;
-use std::env::join_paths;
 use std::fs::{File, OpenOptions};
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
@@ -61,11 +60,14 @@ fn main() {
                 Event::Keyboard(kb_event) => {
                     let key = kb_event.key();
                     let state = kb_event.key_state();
-
+                    println!("0x{:x} has been pressed {}", key, key);
                     if key == Keys::LeftAlt as u32
                         || key == Keys::LeftCtrl as u32
                         || key == Keys::LeftMod as u32
                         || key == Keys::Space as u32
+                        || key == Keys::RightCtrl as u32
+                        || key == Keys::RightMod as u32
+                        || key == Keys::RightAlt as u32
                     {
                         match state {
                             KeyState::Pressed => active_keys.push(key),
