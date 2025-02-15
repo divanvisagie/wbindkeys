@@ -81,6 +81,11 @@ pub enum Keys {
     BackSlash = 0x2b,
     Dash = 0x0c,
     Equal = 0x0d,
+    Mouse1 = 0x110,
+    Mouse2 = 0x111,
+    Mouse3 = 0x112,
+    Mouse4 = 0x113,
+    Mouse5 = 0x114,
     }
 
 pub fn parse_binding(binding: &str) -> Vec<u32> {
@@ -173,6 +178,11 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "BackSlash"=> keys.push(Keys::BackSlash as u32),
             "Dash"=> keys.push(Keys::Dash as u32),
             "Equal"=> keys.push(Keys::Equal as u32),
+            "Mouse1"=> keys.push(Keys::Mouse1 as u32),
+            "Mouse2"=> keys.push(Keys::Mouse2 as u32),
+            "Mouse3"=> keys.push(Keys::Mouse3 as u32),
+            "Mouse4"=> keys.push(Keys::Mouse4 as u32),
+            "Mouse5"=> keys.push(Keys::Mouse5 as u32),            
             _ => {}
         }
     }

@@ -1,5 +1,7 @@
 use dirs::config_dir;
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
+use input::event::pointer::PointerScrollEvent;
+use input::event::PointerEvent;
 use input::{Event, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use parser::Keys;
@@ -56,11 +58,22 @@ fn main() {
     loop {
         input.dispatch().unwrap();
         for event in &mut input {
+            // println!("Event {:?}", event);
             match event {
+                Event::Pointer(PointerEvent::Motion(_)) => {} // If event is mouse movement do nothing
+                Event::Pointer(PointerEvent::Button(mouse_button)) => {
+                    let button = mouse_button.button();
+                    // println!("Mouse button {:x} -- {}", button, button);
+                }
+                Event::Pointer(PointerEvent::ScrollWheel(scroll_event)) => {
+                    println!("{:?}", scroll_event.has_axis(input::event::pointer::Axis::Horizontal));
+                    println!("Horizontal scroll event -- {:?} ", scroll_event.scroll_value(input::event::pointer::Axis::Horizontal));
+                    println!("Vertical scroll event -- {:?} ", scroll_event.scroll_value_v120(input::event::pointer::Axis::Vertical))
+                }
                 Event::Keyboard(kb_event) => {
                     let key = kb_event.key();
                     let state = kb_event.key_state();
-                    println!("0x{:x} has been pressed {}", key, key);
+                    // println!("0x{:x} has been pressed {}", key, key);
                     if key == Keys::LeftAlt as u32
                         || key == Keys::LeftCtrl as u32
                         || key == Keys::LeftMod as u32
@@ -74,7 +87,6 @@ fn main() {
                             KeyState::Released => active_keys.clear(),
                         }
                     }
-
                     let total_combo = active_keys
                         .iter()
                         .chain(std::iter::once(&key))
@@ -83,7 +95,9 @@ fn main() {
 
                     script_manager.handle_action(total_combo, state);
                 }
-                _ => {} // Ignore non-keyboard events
+                _ => {} // Ignore all other events
+            
+
             }
         }
     }
