@@ -55,6 +55,8 @@ fn main() {
     script_manager.load_script(&script).unwrap();
 
     let mut active_keys = Vec::new();
+    let mut key:u32 = 0;
+    let mut state: KeyState = KeyState::Released;
     loop {
         input.dispatch().unwrap();
         for event in &mut input {
@@ -62,18 +64,31 @@ fn main() {
             match event {
                 Event::Pointer(PointerEvent::Motion(_)) => {} // If event is mouse movement do nothing
                 Event::Pointer(PointerEvent::Button(mouse_button)) => {
-                    let button = mouse_button.button();
-                    // println!("Mouse button {:x} -- {}", button, button);
+                    key = mouse_button.button();
                 }
                 Event::Pointer(PointerEvent::ScrollWheel(scroll_event)) => {
-                    println!("{:?}", scroll_event.has_axis(input::event::pointer::Axis::Horizontal));
-                    println!("Horizontal scroll event -- {:?} ", scroll_event.scroll_value(input::event::pointer::Axis::Horizontal));
-                    println!("Vertical scroll event -- {:?} ", scroll_event.scroll_value_v120(input::event::pointer::Axis::Vertical))
+                    if scroll_event.has_axis(input::event::pointer::Axis::Vertical) == true {
+                        if scroll_event.scroll_value(input::event::pointer::Axis::Vertical) > 0.0 {
+                            println!("Scroll Down!");
+                            key = 0x999
+                        }else {
+                            println!("Scroll Up!");
+                            key = 0x998
+                        }
+                    } else {
+                        if scroll_event.scroll_value(input::event::pointer::Axis::Horizontal) > 0.0 {
+                            print!("Scroll Right!");
+                            key = 0x997
+                        } else {
+                            println!("Scroll Left!");
+                            key = 0x996
+                        }
+                    }
                 }
                 Event::Keyboard(kb_event) => {
-                    let key = kb_event.key();
-                    let state = kb_event.key_state();
-                    // println!("0x{:x} has been pressed {}", key, key);
+                    key = kb_event.key();
+                    state = kb_event.key_state();
+                    println!("0x{:x} has been pressed {}", key, key);
                     if key == Keys::LeftAlt as u32
                         || key == Keys::LeftCtrl as u32
                         || key == Keys::LeftMod as u32
@@ -87,17 +102,18 @@ fn main() {
                             KeyState::Released => active_keys.clear(),
                         }
                     }
-                    let total_combo = active_keys
-                        .iter()
-                        .chain(std::iter::once(&key))
-                        .copied()
-                        .collect::<Vec<u32>>();
-
-                    script_manager.handle_action(total_combo, state);
+                println!("State {:?}", state);
                 }
                 _ => {} // Ignore all other events
-            
+            }
+            if state == KeyState::Pressed {
+                let total_combo = active_keys
+                    .iter()
+                    .chain(std::iter::once(&key))
+                    .copied()
+                    .collect::<Vec<u32>>();
 
+                script_manager.handle_action(total_combo, state);
             }
         }
     }
