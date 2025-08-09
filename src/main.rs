@@ -60,7 +60,6 @@ fn main() {
     loop {
         input.dispatch().unwrap();
         for event in &mut input {
-            // println!("Event {:?}", event);
             match event {
                 Event::Pointer(PointerEvent::Motion(_)) => {} // If event is mouse movement do nothing
                 Event::Pointer(PointerEvent::Button(mouse_button)) => {
@@ -88,7 +87,6 @@ fn main() {
                 Event::Keyboard(kb_event) => {
                     key = kb_event.key();
                     state = kb_event.key_state();
-                    println!("0x{:x} has been pressed {}", key, key);
                     if key == Keys::LeftAlt as u32
                         || key == Keys::LeftCtrl as u32
                         || key == Keys::LeftMod as u32
@@ -102,7 +100,6 @@ fn main() {
                             KeyState::Released => active_keys.clear(),
                         }
                     }
-                println!("State {:?}", state);
                 }
                 _ => {} // Ignore all other events
             }
