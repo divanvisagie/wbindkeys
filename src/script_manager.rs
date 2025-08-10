@@ -1,4 +1,3 @@
-
 use input::event::keyboard::KeyState;
 use mlua::Lua;
 use std::collections::HashMap;
