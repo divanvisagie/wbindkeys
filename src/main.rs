@@ -1,6 +1,6 @@
 use dirs::config_dir;
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
-use input::event::pointer::PointerScrollEvent;
+use input::event::pointer::{ButtonState, PointerScrollEvent};
 use input::event::PointerEvent;
 use input::{Event, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
@@ -35,6 +35,13 @@ impl LibinputInterface for WBindKeysInterface {
     }
 }
 
+fn convert_button_to_key_state(button_state: ButtonState) -> KeyState {
+    match button_state {
+        ButtonState::Pressed => KeyState::Pressed,
+        ButtonState::Released => KeyState::Released,
+    }
+}
+
 fn main() {
     let mut input = Libinput::new_with_udev(WBindKeysInterface);
     input.udev_assign_seat("seat0").unwrap();
@@ -65,6 +72,7 @@ fn main() {
                 Event::Pointer(PointerEvent::Motion(_)) => {} // If event is mouse movement do nothing
                 Event::Pointer(PointerEvent::Button(mouse_button)) => {
                     key = mouse_button.button();
+                    state = convert_button_to_key_state(mouse_button.button_state());
                 }
                 Event::Pointer(PointerEvent::ScrollWheel(scroll_event)) => {
                     if scroll_event.has_axis(input::event::pointer::Axis::Vertical) == true {
