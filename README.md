@@ -19,9 +19,9 @@ wbindkeys uses lua for maximum configurability, because sometimes you need an if
 Currently the only way to install wbindkeys is to build from source. You will have to build the binary and copy it to a bin directory of your choice.
 
 ```sh
-./configure
-make
-cp target/release/wbindkeys ~/.local/bin
+make builddep
+make release
+make install
 ```
 
 You will then need to run both files in the scripts directory. 
@@ -55,6 +55,6 @@ The config file is automatically loaded from the `config_dir()/wbindkeys/init.lu
 ## Development Setup 
 
 ```sh
-./configure
+make builddep
 make
 ```

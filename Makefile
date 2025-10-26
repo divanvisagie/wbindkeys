@@ -1,17 +1,32 @@
 # Rust project makefile
 BIN='wbindkeys'
 
-.Phony : build clean run
+.Phony : build-debug build-release install clean run builddep
 
-build: src/main.rs
+all: build-release
+
+builddep:
+	sudo apt install -y \
+     cargo \
+     libevdev-dev \
+     libudev-dev \
+     libinput-dev \
+
+
+build-debug: src/main.rs
 	cargo build
 
-clean: 
+build-release: src/main.rs
+	cargo build --release
+
+clean:
 	cargo clean
 
-check: 
+check:
 	cargo check
 
-run: build
-	sudo ./target/debug/$(BIN)
+run: build-debug
+	./target/debug/$(BIN)
 
+install: build-release
+	cp target/release/$(BIN) ~/.local/bin/
