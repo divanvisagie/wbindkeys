@@ -55,9 +55,10 @@ fn main() {
     script_manager.load_script(&script).unwrap();
 
     let mut active_keys = Vec::new();
-    let mut key:u32 = 0;
-    let mut state: KeyState = KeyState::Released;
     loop {
+        let mut key:u32 = 0;
+        let mut state: KeyState = KeyState::Released;
+
         input.dispatch().unwrap();
         for event in &mut input {
             match event {
