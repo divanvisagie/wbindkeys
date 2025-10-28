@@ -1,8 +1,8 @@
 use dirs::config_dir;
-use input::event::PointerEvent;
+use input::event::{EventTrait, PointerEvent};
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
 use input::event::pointer::{ButtonState, PointerScrollEvent};
-use input::{Event, Libinput, LibinputInterface};
+use input::{Event, Device, Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use parser::Keys;
 use script_manager::ScriptManager;
@@ -90,6 +90,8 @@ fn main() {
 
         // --- Handle libinput events ---
         for event in &mut input {
+            let d: Device = event.device();
+
             match event {
                 Event::Pointer(PointerEvent::Motion(_)) => {} // If event is mouse movement do nothing
                 Event::Pointer(PointerEvent::Button(mouse_button)) => {
@@ -153,7 +155,7 @@ fn main() {
                     .copied()
                     .collect::<Vec<u32>>();
 
-                script_manager.handle_action(total_combo, state);
+                script_manager.handle_action(total_combo, state, d.id_vendor(), d.id_product());
             }
         }
 
