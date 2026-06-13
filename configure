@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # Install rust if not present 
-if ! command_exists rustc; then
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+if ! command -v rustc &>/dev/null; then
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 fi
-sudo apt install -y libevdev-dev
-sudo apt install -y libudev-dev
-sudo apt install -y libinput-dev
+sudo apt-get update
+sudo apt-get install -y libevdev-dev libudev-dev libinput-dev
