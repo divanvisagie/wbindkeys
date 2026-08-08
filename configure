@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install rust if not present 
-if ! command_exists rustc; then
+if ! command -v rustc >/dev/null 2>&1; then
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 fi
 sudo apt install -y libevdev-dev
