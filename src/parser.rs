@@ -86,6 +86,11 @@ pub enum Keys {
     Mouse3 = 0x112,
     Mouse4 = 0x113,
     Mouse5 = 0x114,
+    Mouse6 = 0x115,
+    Mouse7 = 0x116,
+    Mouse8 = 0x117,
+    Mouse9 = 0x118,
+    Mouse10 = 0x119,
     ScrollLeft = 0x996,
     ScrollRight = 0x997,
     ScrollUp = 0x998,
@@ -186,11 +191,16 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "Mouse2"=> keys.push(Keys::Mouse2 as u32),
             "Mouse3"=> keys.push(Keys::Mouse3 as u32),
             "Mouse4"=> keys.push(Keys::Mouse4 as u32),
-            "Mouse5"=> keys.push(Keys::Mouse5 as u32),            
-            "ScrollLeft"=> keys.push(Keys::ScrollLeft as u32),            
-            "ScrollRight"=> keys.push(Keys::ScrollRight as u32),            
-            "ScrollUp"=> keys.push(Keys::ScrollUp as u32),            
-            "ScrollDown"=> keys.push(Keys::ScrollDown as u32),            
+            "Mouse5"=> keys.push(Keys::Mouse5 as u32),
+            "Mouse6"=> keys.push(Keys::Mouse6 as u32),
+            "Mouse7"=> keys.push(Keys::Mouse7 as u32),
+            "Mouse8"=> keys.push(Keys::Mouse8 as u32),
+            "Mouse9"=> keys.push(Keys::Mouse9 as u32),
+            "Mouse10"=> keys.push(Keys::Mouse10 as u32),
+            "ScrollLeft"=> keys.push(Keys::ScrollLeft as u32),
+            "ScrollRight"=> keys.push(Keys::ScrollRight as u32),
+            "ScrollUp"=> keys.push(Keys::ScrollUp as u32),
+            "ScrollDown"=> keys.push(Keys::ScrollDown as u32),
             _ => {}
         }
     }
@@ -287,7 +297,6 @@ mod tests {
             ("F11", Keys::F11 as u32),
             ("F12", Keys::F12 as u32),
             ("F12", Keys::F12 as u32),
-  
         ];
 
         for (input, expected_output) in test_cases {
