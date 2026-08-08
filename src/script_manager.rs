@@ -31,8 +31,6 @@ impl ScriptManager {
         let basic_bind =
             self.lua
                 .create_function(move |_, (binding, target): (String, String)| {
-                    println!("Binding key: {:?}", binding);
-                    println!("Target: {:?}", target);
                     let mut actions_lock = actions_str.lock().unwrap();
                     let binding = parse_binding(&binding);
                     let target = Bindtype::Command(target);
@@ -51,8 +49,6 @@ impl ScriptManager {
     pub fn handle_action(&self, total_combo: Vec<u32>, state: KeyState) {
         if let Some(action) = self.actions.lock().unwrap().get(&total_combo) {
             if state == KeyState::Pressed {
-                println!("Action: {:?}", action);
-
                 match action {
                     Bindtype::Command(command) => {
                         // run_command_as_user(command);
