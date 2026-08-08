@@ -1,27 +1,30 @@
 #!/bin/bash
+
+BIN_DEST="${HOME}/.local/bin/wbindkeys"
+SERVICE_DEST="${HOME}/.config/systemd/user/wbindkeys.service"
+
 # Install the wbindkeys binary
 # Assuming wbindkeys is already built and located in the current directory
-cp target/release/wbindkeys /usr/local/bin/
-chmod +x /usr/local/bin/wbindkeys
-echo "Installed wbindkeys to /usr/local/bin."
+mkdir -p $(dirname $BIN_DEST)
+cp target/release/wbindkeys "$BIN_DEST"
+chmod +x "$BIN_DEST"
+echo "Installed wbindkeys to $BIN_DEST"
 
 # Create a systemd service
-SYSTEMD_SERVICE='/etc/systemd/system/wbindkeys.service'
-cat <<EOL > $SYSTEMD_SERVICE
+mkdir -p "$(dirname $SERVICE_DEST)"
+cat <<EOL > $SERVICE_DEST
 [Unit]
 Description=wbindkeys service
 
 [Service]
-ExecStart=/usr/local/bin/wbindkeys
-User=$CURRENT_USER
+Type=simple
+ExecStart=$BIN_DEST
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOL
 
-systemctl daemon-reload
-systemctl enable wbindkeys
-systemctl start wbindkeys
+systemctl --user daemon-reload
+systemctl --user enable wbindkeys
+systemctl --user start wbindkeys
 echo "Created and started systemd service."
-
-echo "Installation completed. Please log out and log back in for changes to take effect."

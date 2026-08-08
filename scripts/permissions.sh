@@ -11,14 +11,8 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Add the current user to the input group
-CURRENT_USER=$(logname)
-usermod -aG input "$CURRENT_USER"
-echo "Added $CURRENT_USER to the input group."
-
 # Create a udev rule for input devices
-UDEV_RULE='/etc/udev/rules.d/99-input.rules'
-echo 'ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", MODE="660", GROUP="input"' > "$UDEV_RULE"
+UDEV_RULE='/etc/udev/rules.d/69-wbindkeys.rules'
+echo 'ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess", TAG+="seat"' > "$UDEV_RULE"
 udevadm control --reload-rules && udevadm trigger
 echo "Created udev rule at $UDEV_RULE."
-
