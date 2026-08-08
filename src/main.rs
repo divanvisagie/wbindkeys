@@ -68,19 +68,15 @@ fn main() {
                 Event::Pointer(PointerEvent::ScrollWheel(scroll_event)) => {
                     if scroll_event.has_axis(input::event::pointer::Axis::Vertical) == true {
                         if scroll_event.scroll_value(input::event::pointer::Axis::Vertical) > 0.0 {
-                            println!("Scroll Down!");
-                            key = 0x999
-                        }else {
-                            println!("Scroll Up!");
-                            key = 0x998
+                            key = 0x999;
+                        } else {
+                            key = 0x998;
                         }
                     } else {
                         if scroll_event.scroll_value(input::event::pointer::Axis::Horizontal) > 0.0 {
-                            print!("Scroll Right!");
-                            key = 0x997
+                            key = 0x997;
                         } else {
-                            println!("Scroll Left!");
-                            key = 0x996
+                            key = 0x996;
                         }
                     }
                 }
