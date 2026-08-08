@@ -37,4 +37,4 @@ test-run: build-debug
 	XDG_CONFIG_HOME=$(CURDIR)/testing/config sudo --preserve-env=XDG_CONFIG_HOME ./target/debug/$(BIN)
 
 install: build-release
-	cp target/release/$(BIN) ~/.local/bin/
+	./scripts/install.sh
