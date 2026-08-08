@@ -14,5 +14,5 @@ fi
 # Create a udev rule for input devices
 UDEV_RULE='/etc/udev/rules.d/69-wbindkeys.rules'
 echo 'ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess", TAG+="seat"' > "$UDEV_RULE"
-udevadm control --reload-rules && udevadm trigger
+udevadm control --reload-rules && udevadm trigger --action=add --subsystem-match=input
 echo "Created udev rule at $UDEV_RULE."
