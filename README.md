@@ -16,18 +16,19 @@ wbindkeys uses lua for maximum configurability, because sometimes you need an if
 
 ### Install 
 
-Currently the only way to install wbindkeys is to build from source. You will have to build the binary and copy it to a bin directory of your choice.
+Currently the only way to install wbindkeys is to build from source.
+
+First install build dependencies and grant wbindkeys permission to read input devices (this needs root, and must happen before the service is started so it can access `/dev/input` as your user):
 
 ```sh
 make builddep
-make build-release
-make install
+sudo ./scripts/permissions.sh
 ```
 
-You will then need to run both files in the scripts directory. 
+Then build and install. `make install` builds the release binary, copies it to `~/.local/bin`, and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
 
 ```sh
-./scripts/permissions.sh
+make install
 ```
 
 ### Config
