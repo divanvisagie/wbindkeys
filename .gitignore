@@ -17,3 +17,6 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+# Local PR testing harness (see testing/config)
+testing/wbindkeys-test.log
