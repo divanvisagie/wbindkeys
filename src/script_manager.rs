@@ -32,9 +32,10 @@ impl ScriptManager {
             self.lua
                 .create_function(move |_, (binding, target): (String, String)| {
                     let mut actions_lock = actions_str.lock().unwrap();
-                    let binding = parse_binding(&binding);
+                    let keys = parse_binding(&binding);
+                    debug!("Registered binding {:?} => {:?} (keys: {:?})", binding, target, keys);
                     let target = Bindtype::Command(target);
-                    actions_lock.insert(binding, target);
+                    actions_lock.insert(keys, target);
                     Ok(())
                 })?;
         self.lua.globals().set("bind", basic_bind)?;
@@ -51,6 +52,7 @@ impl ScriptManager {
             if state == KeyState::Pressed {
                 match action {
                     Bindtype::Command(command) => {
+                        debug!("Matched combo {:?}, running: {}", total_combo, command);
                         // run_command_as_user(command);
                         Command::new("sh")
                             .arg("-c")
@@ -62,6 +64,8 @@ impl ScriptManager {
                     }
                 }
             }
+        } else {
+            debug!("No binding for combo {:?}", total_combo);
         }
     }
 }

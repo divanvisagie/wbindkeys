@@ -1,7 +1,7 @@
 # Rust project makefile
 BIN='wbindkeys'
 
-.Phony : builddep build-debug build-release install clean check run test-run
+.Phony : builddep permissions build-debug build-release install clean check run test-run
 
 all: build-release
 
@@ -9,6 +9,12 @@ builddep:
 	command -v rustc >/dev/null 2>&1 || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 	sudo apt-get update
 	sudo apt-get install -y pkg-config libevdev-dev libudev-dev libinput-dev
+
+# Installs the udev rule that lets wbindkeys read input devices as your user
+# and re-triggers udev so existing devices get access. Safe to re-run, e.g.
+# when --debug shows "Permission denied" for input devices.
+permissions:
+	sudo ./scripts/permissions.sh
 
 build-debug: src/main.rs
 	cargo build

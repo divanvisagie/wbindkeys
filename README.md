@@ -22,7 +22,7 @@ First install build dependencies and grant wbindkeys permission to read input de
 
 ```sh
 make builddep
-sudo ./scripts/permissions.sh
+make permissions
 ```
 
 Then build and install. `make install` builds the release binary, copies it to `~/.local/bin`, and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
@@ -44,6 +44,17 @@ bind("ALT+T", "flatpak run org.telegram.desktop")
 ### Loading the Configuration
 
 The config file is automatically loaded from the `config_dir()/wbindkeys/init.lua`. Make sure the configuration file exists, otherwise the application will panic.
+
+### Debugging your config
+
+Run with `--debug` (or `-d`) to print log output to stderr: the config path being loaded, each registered binding and the key codes it maps to, any unrecognised key names, every key press with its combo, and which command a combo triggered.
+
+```sh
+systemctl --user stop wbindkeys.service
+wbindkeys --debug
+```
+
+If the output shows `Permission denied` for input devices, run `make permissions` to re-apply the udev rule.
 
 ## Roadmap to 0.1.0
 - [x] Hook into wayland keyboard events

@@ -203,7 +203,7 @@ pub fn parse_binding(binding: &str) -> Vec<u32> {
             "SCROLLRIGHT"=> keys.push(Keys::ScrollRight as u32),
             "SCROLLUP"=> keys.push(Keys::ScrollUp as u32),
             "SCROLLDOWN"=> keys.push(Keys::ScrollDown as u32),
-            _ => {}
+            _ => debug!("Unknown key {:?} in binding {:?}, ignoring", string, binding),
         }
     }
     keys

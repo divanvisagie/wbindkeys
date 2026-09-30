@@ -10,10 +10,23 @@ use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::u32;
 
 const SCROLL_HOLD_MS: u64 = 500; // how long a scroll "press" lasts
+
+/// Set by the `--debug` flag; enables `debug!` log output.
+pub static DEBUG: AtomicBool = AtomicBool::new(false);
+
+/// Prints to stderr when running with `--debug`.
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        if crate::DEBUG.load(std::sync::atomic::Ordering::Relaxed) {
+            eprintln!("[debug] {}", format!($($arg)*));
+        }
+    };
+}
 
 mod parser;
 mod script_manager;
@@ -29,8 +42,14 @@ impl LibinputInterface for WBindKeysInterface {
             .open(path);
 
         match file {
-            Ok(f) => Ok(f.into()),
-            Err(err) => Err(err.raw_os_error().unwrap_or(-1)),
+            Ok(f) => {
+                debug!("Opened input device {:?}", path);
+                Ok(f.into())
+            }
+            Err(err) => {
+                debug!("Failed to open input device {:?}: {}", path, err);
+                Err(err.raw_os_error().unwrap_or(-1))
+            }
         }
     }
 
@@ -59,7 +78,30 @@ struct ScrollState {
     active: bool,
 }
 
+fn print_usage() {
+    println!("Usage: wbindkeys [--debug]");
+    println!();
+    println!("Options:");
+    println!("  -d, --debug  Print log output (config loading, bindings, key events)");
+    println!("  -h, --help   Print this help");
+}
+
 fn main() {
+    for arg in std::env::args().skip(1) {
+        match arg.as_str() {
+            "-d" | "--debug" => DEBUG.store(true, Ordering::Relaxed),
+            "-h" | "--help" => {
+                print_usage();
+                return;
+            }
+            _ => {
+                eprintln!("Unknown argument: {}", arg);
+                print_usage();
+                std::process::exit(2);
+            }
+        }
+    }
+
     let mut input = Libinput::new_with_udev(WBindKeysInterface);
     input.udev_assign_seat("seat0").unwrap();
 
@@ -75,8 +117,10 @@ fn main() {
     if !config_path.exists() {
         panic!("Config file not found at {:?}", config_path);
     }
+    debug!("Loading config from {:?}", config_path);
     let script = std::fs::read_to_string(config_path).unwrap();
     script_manager.load_script(&script).unwrap();
+    debug!("Config loaded, listening for input events");
 
     let mut active_keys = Vec::new();
     let mut key_states: HashMap<u32, KeyState> = HashMap::new();
@@ -109,8 +153,7 @@ fn main() {
                             || now.duration_since(entry.last_time)
                                 > Duration::from_millis(SCROLL_HOLD_MS)
                         {
-                            #[cfg(debug_assertions)]
-                            println!("Scroll {:?} => Pressed ({:#03x})", scroll_dir, virtual_key);
+                            debug!("Scroll {:?} => Pressed ({:#03x})", scroll_dir, virtual_key);
 
                             entry.active = true;
                             entry.last_time = now;
@@ -153,6 +196,7 @@ fn main() {
                     .copied()
                     .collect::<Vec<u32>>();
 
+                debug!("Pressed key {} ({:#x}), combo: {:?}", key, key, total_combo);
                 script_manager.handle_action(total_combo, state);
             }
         }
@@ -167,8 +211,7 @@ fn main() {
                 let prev_state = key_states.get(&release_key).copied().unwrap_or(KeyState::Released);
 
                 if prev_state == KeyState::Pressed {
-                    #[cfg(debug_assertions)]
-                    println!("Scroll {:?} => Released ({:#03x})", dir, release_key);
+                    debug!("Scroll {:?} => Released ({:#03x})", dir, release_key);
 
                     key_states.insert(release_key, KeyState::Released);
                     state_entry.active = false;
