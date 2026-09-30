@@ -13,8 +13,8 @@ builddep:
 # Installs the udev rule that lets wbindkeys read input devices as your user
 # and re-triggers udev so existing devices get access. Safe to re-run, e.g.
 # when --debug shows "Permission denied" for input devices.
-permissions:
-	sudo ./scripts/permissions.sh
+permissions: build-debug
+	sudo ./target/debug/$(BIN) permissions --set
 
 build-debug: src/main.rs
 	cargo build
@@ -37,8 +37,8 @@ run: build-debug
 # launching real applications. tail -f testing/wbindkeys-test.log while
 # this runs and press the bound combos.
 #
-# Uses sudo regardless of scripts/permissions.sh's udev/seat ACL setup, so
-# this keeps working for local testing even before that script has been run.
+# Uses sudo regardless of `wbindkeys permissions --set`'s udev/seat ACL setup, so
+# this keeps working for local testing even before that has been run.
 test-run: build-debug
 	XDG_CONFIG_HOME=$(CURDIR)/testing/config sudo --preserve-env=XDG_CONFIG_HOME ./target/debug/$(BIN)
 

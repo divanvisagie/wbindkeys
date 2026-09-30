@@ -18,7 +18,7 @@ wbindkeys uses lua for maximum configurability, because sometimes you need an if
 
 Currently the only way to install wbindkeys is to build from source.
 
-First install build dependencies and grant wbindkeys permission to read input devices (this needs root, and must happen before the service is started so it can access `/dev/input` as your user):
+First install build dependencies and grant wbindkeys permission to read input devices (this needs root, and must happen before the service is started so it can access `/dev/input` as your user). `make permissions` builds wbindkeys and runs `sudo wbindkeys permissions --set`:
 
 ```sh
 make builddep
@@ -54,7 +54,14 @@ systemctl --user stop wbindkeys.service
 wbindkeys --debug
 ```
 
-If the output shows `Permission denied` for input devices, run `make permissions` to re-apply the udev rule.
+If the output shows `Permission denied` for input devices, check and fix access with the `permissions` subcommand:
+
+```sh
+wbindkeys permissions --check        # is the udev rule installed and are devices readable?
+sudo wbindkeys permissions --set     # install the udev rule and re-apply device access
+```
+
+`--check` should be run as your normal user, since that is who wbindkeys runs as. If `sudo` can't find `wbindkeys` (e.g. it is in `~/.local/bin`), use the full path: `sudo ~/.local/bin/wbindkeys permissions --set`.
 
 ## Roadmap to 0.1.0
 - [x] Hook into wayland keyboard events

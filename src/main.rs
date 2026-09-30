@@ -1,3 +1,4 @@
+use clap::{Args as ClapArgs, Parser, Subcommand};
 use dirs::config_dir;
 use input::event::PointerEvent;
 use input::event::keyboard::{KeyState, KeyboardEventTrait};
@@ -29,6 +30,7 @@ macro_rules! debug {
 }
 
 mod parser;
+mod permissions;
 mod script_manager;
 
 struct WBindKeysInterface;
@@ -78,28 +80,47 @@ struct ScrollState {
     active: bool,
 }
 
-fn print_usage() {
-    println!("Usage: wbindkeys [--debug]");
-    println!();
-    println!("Options:");
-    println!("  -d, --debug  Print log output (config loading, bindings, key events)");
-    println!("  -h, --help   Print this help");
+/// Bind keys, mouse buttons and scroll events to commands on Wayland.
+#[derive(Parser)]
+#[command(version, about)]
+struct Args {
+    /// Print log output (input devices, config loading, bindings, key events)
+    #[arg(short, long)]
+    debug: bool,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Check or set up permission to read input devices
+    Permissions(PermissionsArgs),
+}
+
+#[derive(ClapArgs)]
+#[group(required = true, multiple = false)]
+struct PermissionsArgs {
+    /// Check the udev rule is installed and input devices are readable
+    #[arg(long)]
+    check: bool,
+
+    /// Install the udev rule and re-trigger input devices (needs root)
+    #[arg(long)]
+    set: bool,
 }
 
 fn main() {
-    for arg in std::env::args().skip(1) {
-        match arg.as_str() {
-            "-d" | "--debug" => DEBUG.store(true, Ordering::Relaxed),
-            "-h" | "--help" => {
-                print_usage();
-                return;
-            }
-            _ => {
-                eprintln!("Unknown argument: {}", arg);
-                print_usage();
-                std::process::exit(2);
-            }
-        }
+    let args = Args::parse();
+    DEBUG.store(args.debug, Ordering::Relaxed);
+
+    if let Some(Commands::Permissions(perms)) = args.command {
+        let ok = if perms.set {
+            permissions::set().map_err(|err| eprintln!("error: {}", err)).is_ok()
+        } else {
+            permissions::check()
+        };
+        std::process::exit(if ok { 0 } else { 1 });
     }
 
     let mut input = Libinput::new_with_udev(WBindKeysInterface);
