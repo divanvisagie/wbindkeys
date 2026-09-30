@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wbindkeys - Wayland replacement for xbindkeys</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+    <ul>
+        <li id="nav-title">
+            <a href="index.html"><strong>wbindkeys </strong>docs</a>
+        </li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="wbindkeys.1.html">Manual Page</a></li>
+        <li><a href="LICENSE.html">License</a></li>
+        <li>
+            <a href="https://github.com/divanvisagie/wbindkeys">Source Code</a>
+        </li>
+    </ul>
+</nav>
+<h1 id="wbindkeys">wbindkeys</h1>
+<p>A wayland replacement for <code>xbindkeys</code></p>
+<p>Bind keys, key combos, mouse buttons and scroll events to shell
+commands, configured in Lua.</p>
+<h2 id="philosophy">Philosophy</h2>
+<p>While wbindkeys intends to replace xbindkeys, in the spirit of
+wayland being a replacement with a better API, wbindkeys will offer a
+new configuration file language that is easier to handle for both
+machines and humans alike.</p>
+<p><code>wbindkeys</code> uses lua for maximum configurability, because
+sometimes you need an if statement in your config.</p>
+<p>wbindkeys reads input directly from your input devices through
+libinput rather than through the compositor, so it works the same under
+any Wayland compositor. This is also why it needs permission to read
+<code>/dev/input</code> (see <a
+href="#permissions">Permissions</a>).</p>
+<h2 id="installation-and-setup">Installation and setup</h2>
+<p>wbindkeys needs the libinput, libudev and libevdev development
+packages to build. On Debian/Ubuntu:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install pkg-config libevdev-dev libudev-dev libinput-dev</span></code></pre></div>
+<p>On other distributions install the equivalent packages with your
+package manager.</p>
+<h3 id="from-cratesio">From crates.io</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install wbindkeys</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ~/.cargo/bin/wbindkeys permissions <span class="at">--set</span></span></code></pre></div>
+<p>Then create a <a href="#config">config</a> and run
+<code>wbindkeys</code>. To start it automatically when you log in, add a
+systemd user service at
+<code>~/.config/systemd/user/wbindkeys.service</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">wbindkeys service</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">simple</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">%h/.cargo/bin/wbindkeys</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div>
+<p>and enable it with
+<code>systemctl --user enable --now wbindkeys.service</code>.</p>
+<h3 id="from-source">From source</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep       <span class="co"># installs Rust (if needed) and the packages above, Debian/Ubuntu only</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># grants access to input devices, see Permissions</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
+<p><code>make install</code> builds the release binary, copies it to
+<code>~/.local/bin</code>, and installs + starts a systemd user service
+(<code>wbindkeys.service</code>) that runs it.</p>
+<h2 id="permissions">Permissions</h2>
+<p>wbindkeys reads your keyboard and mouse directly from
+<code>/dev/input</code>, which normal users can't read by default. It
+runs as your user rather than as root, so it needs to be granted access
+once per machine.</p>
+<h3 id="granting-access">Granting access</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> wbindkeys permissions <span class="at">--set</span></span></code></pre></div>
+<p>This installs a udev rule at
+<code>/etc/udev/rules.d/69-wbindkeys.rules</code> that tags input
+devices with <code>uaccess</code>, then re-applies it to devices that
+are already connected. With that tag, systemd-logind gives whoever is
+logged in at the machine (the active local session) read access to input
+devices, and should move that access along when you switch users.
+Nothing is granted to users logged in remotely or to other accounts.</p>
+<p><code>sudo</code> often can't find binaries in
+<code>~/.cargo/bin</code> or <code>~/.local/bin</code>, so you may need
+the full path:
+<code>sudo ~/.cargo/bin/wbindkeys permissions --set</code> or
+<code>sudo ~/.local/bin/wbindkeys permissions --set</code>. When
+building from source, <code>make permissions</code> does this for
+you.</p>
+<h3 id="checking-access">Checking access</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> permissions <span class="at">--check</span></span></code></pre></div>
+<p>Run this as your normal user, not with <code>sudo</code>, since that
+is who wbindkeys runs as. It reports whether the udev rule is installed
+and lists any input devices you can't read:</p>
+<pre><code>[ok]   udev rule installed at /etc/udev/rules.d/69-wbindkeys.rules
+[fail] 17 of 18 input devices are not readable:
+         /dev/input/event0 (Power Button): Permission denied (os error 13)
+         ...</code></pre>
+<p>It exits with a non-zero status if anything is wrong, so it can also
+be used in scripts.</p>
+<h3 id="if-access-is-still-denied">If access is still denied</h3>
+<ul>
+<li><strong>Re-run
+<code>sudo wbindkeys permissions --set</code>.</strong> Access is
+granted when a device is added, so devices that were connected while
+another user (or the login screen) was active can end up belonging to
+that user. Re-running re-applies access for the current session.</li>
+<li><strong>Log out and back in</strong>, or reboot, if re-running
+doesn't help.</li>
+<li><strong>Make sure you're in a local session.</strong> Access only
+goes to the session at the physical seat, so it won't work over SSH, or
+from a session that isn't the active one.</li>
+<li>As a last resort you can add yourself to the <code>input</code>
+group (<code>sudo usermod -aG input $USER</code>, then log out and back
+in). This works regardless of session, but lets every program you run
+read your keyboard, so the udev rule is preferred.</li>
+</ul>
+<h2 id="config">Config</h2>
+<p>wbindkeys loads its config from
+<code>$XDG_CONFIG_HOME/wbindkeys/init.lua</code>, which is
+<code>~/.config/wbindkeys/init.lua</code> unless you have set
+<code>$XDG_CONFIG_HOME</code>. The file must exist, otherwise wbindkeys
+exits with an error on startup.</p>
+<p>Each binding maps a key combo to a shell command:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Run alacritty on ALT+A</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+A&quot;</span><span class="op">,</span> <span class="st">&quot;alacritty&quot;</span><span class="op">)</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Run Telegram on ALT+T</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+T&quot;</span><span class="op">,</span> <span class="st">&quot;flatpak run org.telegram.desktop&quot;</span><span class="op">)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Mouse buttons and the scroll wheel can be bound too</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;MOD+Mouse4&quot;</span><span class="op">,</span> <span class="st">&quot;wofi --show drun&quot;</span><span class="op">)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+ScrollUp&quot;</span><span class="op">,</span> <span class="st">&quot;pactl set-sink-volume @DEFAULT_SINK@ +5%&quot;</span><span class="op">)</span></span></code></pre></div>
+<p>After changing the config, restart the service:
+<code>systemctl --user restart wbindkeys.service</code>.</p>
+<h3 id="key-names">Key names</h3>
+<p>Key names are case-insensitive and joined with <code>+</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modifiers</td>
+<td><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code>,
+<code>MOD</code> (the Super/Windows key), <code>SPACE</code></td>
+</tr>
+<tr>
+<td>Right-hand modifiers</td>
+<td><code>RIGHTALT</code>, <code>RIGHTCTRL</code>,
+<code>RIGHTSHIFT</code>, <code>RIGHTMOD</code></td>
+</tr>
+<tr>
+<td>Letters and numbers</td>
+<td><code>A</code>–<code>Z</code>, <code>0</code>–<code>9</code></td>
+</tr>
+<tr>
+<td>Function keys</td>
+<td><code>F1</code>–<code>F12</code></td>
+</tr>
+<tr>
+<td>Navigation</td>
+<td><code>UP</code>, <code>DOWN</code>, <code>LEFT</code>,
+<code>RIGHT</code>, <code>HOME</code>, <code>END</code>,
+<code>PAGEUP</code>, <code>PAGEDOWN</code>, <code>INSERT</code>,
+<code>DELETE</code></td>
+</tr>
+<tr>
+<td>Other keys</td>
+<td><code>ESCAPE</code>, <code>ENTER</code>, <code>BACKSPACE</code>,
+<code>TAB</code>, <code>BACKTICK</code>, <code>COMMA</code>,
+<code>PERIOD</code>, <code>SLASH</code>, <code>BACKSLASH</code>,
+<code>SEMICOLON</code>, <code>QUOTE</code>, <code>DASH</code>,
+<code>EQUAL</code>, <code>LEFTSQUARE</code>,
+<code>RIGHTSQUARE</code></td>
+</tr>
+<tr>
+<td>Mouse</td>
+<td><code>MOUSE1</code>–<code>MOUSE10</code>, <code>SCROLLUP</code>,
+<code>SCROLLDOWN</code>, <code>SCROLLLEFT</code>,
+<code>SCROLLRIGHT</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code> and
+<code>MOD</code> refer to the left-hand keys; use the
+<code>RIGHT…</code> names to bind the right-hand ones. When a binding
+has several modifiers, press them in the order they are written
+(<code>CTRL+ALT+T</code> means Ctrl, then Alt, then T). Unknown key
+names are ignored; run with <code>--debug</code> to see them.</p>
+<h2 id="command-line">Command line</h2>
+<pre><code>wbindkeys                              run wbindkeys (this is what the service does)
+wbindkeys --debug                      run with log output, see &quot;Debugging your config&quot;
+wbindkeys permissions --check          check wbindkeys can read your input devices
+sudo wbindkeys permissions --set       install the udev rule that grants that access
+wbindkeys --help                       show all options
+wbindkeys --version                    show the version</code></pre>
+<h2 id="debugging-your-config">Debugging your config</h2>
+<p>Run with <code>--debug</code> (or <code>-d</code>) to print log
+output to stderr: which input devices were opened, the config path being
+loaded, each registered binding and the key codes it maps to, any
+unrecognised key names, every key press with its combo, and whether a
+combo matched a binding.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> stop wbindkeys.service</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> <span class="at">--debug</span></span></code></pre></div>
+<p>If the output shows
+<code>Failed to open input device ... Permission denied</code>, or key
+presses don't show up at all, see <a
+href="#permissions">Permissions</a>.</p>
+<h2 id="roadmap-to-010">Roadmap to 0.1.0</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="" />Hook into input events
+via libinput</label></li>
+<li><label><input type="checkbox" checked="" />Get a binding to execute
+a print from a lua binding config</label></li>
+<li><label><input type="checkbox" checked="" />Execute the
+command</label></li>
+<li><label><input type="checkbox" checked="" />Fix for launching app in
+userspace on the users privilege level</label></li>
+<li><label><input type="checkbox" checked="" />Mouse button and scroll
+wheel bindings</label></li>
+<li><label><input type="checkbox" checked="" /><code>--debug</code>
+output and <code>permissions</code> command for
+troubleshooting</label></li>
+<li><label><input type="checkbox" />Implement and test full range of
+keymaps</label></li>
+<li><label><input type="checkbox" />Debian installer</label></li>
+</ul>
+<h2 id="development-setup">Development Setup</h2>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build-debug    <span class="co"># or `make` for a release build</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> test</span></code></pre></div>
+<p>To try your changes:</p>
+<ul>
+<li><code>make run</code> builds and runs wbindkeys against your normal
+config.</li>
+<li><code>make test-run</code> runs it against
+<code>testing/config/wbindkeys/init.lua</code>, where every binding
+appends a line to <code>testing/wbindkeys-test.log</code> instead of
+launching an app. Watch it with
+<code>tail -f testing/wbindkeys-test.log</code> and press the combos
+from that file.</li>
+</ul>
+<p>Stop the service first
+(<code>systemctl --user stop wbindkeys.service</code>) so the installed
+copy doesn't also react to your key presses.</p>
+</body>
+</html>

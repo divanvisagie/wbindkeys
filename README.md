@@ -1,39 +1,99 @@
 # wbindkeys
-A wayland replacement for xbindkeys
+A wayland replacement for `xbindkeys`
 
-🚧 **This project is currently under construction** 🚧 
-
-You can bind direct bash commands to some key combos but not all combos are supported or tested. Performance is also untested so you may find 
-tasks like app switching to be a little unsatisfactory.
+Bind keys, key combos, mouse buttons and scroll events to shell commands, configured in Lua.
 
 ## Philosophy 
 
-While wbindkeys intends to replace xbindkeys, in the spirit of wayland being a replacement with a better API, wbindkeys will offer a new config file format that is easier to handle for both machines and humans alike.
+While wbindkeys intends to replace xbindkeys, in the spirit of wayland being a replacement with a better API, wbindkeys will offer a new 
+configuration file language that is easier to handle for both machines and humans alike.
 
-wbindkeys uses lua for maximum configurability, because sometimes you need an if statement in your config.
+`wbindkeys` uses lua for maximum configurability, because sometimes you need an if statement in your config.
 
-wbindkeys reads input directly from your input devices through libinput rather than through the compositor, so it works the same under any Wayland compositor. This is also why it needs permission to read `/dev/input` (see below).
+wbindkeys reads input directly from your input devices through libinput rather than through the compositor, so it works the same under any Wayland compositor. This is also why it needs permission to read `/dev/input` (see [Permissions](#permissions)).
 
 ## Installation and setup
 
-### Install 
-
-Currently the only way to install wbindkeys is to build from source. `make builddep` installs build dependencies with `apt`, so on distributions other than Debian/Ubuntu install Rust, `pkg-config` and the development packages for libevdev, libudev and libinput yourself.
-
-First install build dependencies and grant wbindkeys permission to read input devices (this needs root, and must happen before the service is started so it can access `/dev/input` as your user). `make permissions` builds wbindkeys and runs `sudo wbindkeys permissions --set`:
+wbindkeys needs the libinput, libudev and libevdev development packages to build. On Debian/Ubuntu:
 
 ```sh
-make builddep
-make permissions
+sudo apt-get install pkg-config libevdev-dev libudev-dev libinput-dev
 ```
 
-Then build and install. `make install` builds the release binary, copies it to `~/.local/bin`, and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
+On other distributions install the equivalent packages with your package manager.
+
+### From crates.io
 
 ```sh
+cargo install wbindkeys
+sudo ~/.cargo/bin/wbindkeys permissions --set
+```
+
+Then create a [config](#config) and run `wbindkeys`. To start it automatically when you log in, add a systemd user service at `~/.config/systemd/user/wbindkeys.service`:
+
+```ini
+[Unit]
+Description=wbindkeys service
+
+[Service]
+Type=simple
+ExecStart=%h/.cargo/bin/wbindkeys
+
+[Install]
+WantedBy=default.target
+```
+
+and enable it with `systemctl --user enable --now wbindkeys.service`.
+
+### From source
+
+```sh
+make builddep       # installs Rust (if needed) and the packages above, Debian/Ubuntu only
+make permissions    # grants access to input devices, see Permissions
 make install
 ```
 
-### Config
+`make install` builds the release binary, copies it to `~/.local/bin`, and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
+
+## Permissions
+
+wbindkeys reads your keyboard and mouse directly from `/dev/input`, which normal users can't read by default. It runs as your user rather than as root, so it needs to be granted access once per machine.
+
+### Granting access
+
+```sh
+sudo wbindkeys permissions --set
+```
+
+This installs a udev rule at `/etc/udev/rules.d/69-wbindkeys.rules` that tags input devices with `uaccess`, then re-applies it to devices that are already connected. With that tag, systemd-logind gives whoever is logged in at the machine (the active local session) read access to input devices, and should move that access along when you switch users. Nothing is granted to users logged in remotely or to other accounts.
+
+`sudo` often can't find binaries in `~/.cargo/bin` or `~/.local/bin`, so you may need the full path: `sudo ~/.cargo/bin/wbindkeys permissions --set` or `sudo ~/.local/bin/wbindkeys permissions --set`. When building from source, `make permissions` does this for you.
+
+### Checking access
+
+```sh
+wbindkeys permissions --check
+```
+
+Run this as your normal user, not with `sudo`, since that is who wbindkeys runs as. It reports whether the udev rule is installed and lists any input devices you can't read:
+
+```
+[ok]   udev rule installed at /etc/udev/rules.d/69-wbindkeys.rules
+[fail] 17 of 18 input devices are not readable:
+         /dev/input/event0 (Power Button): Permission denied (os error 13)
+         ...
+```
+
+It exits with a non-zero status if anything is wrong, so it can also be used in scripts.
+
+### If access is still denied
+
+- **Re-run `sudo wbindkeys permissions --set`.** Access is granted when a device is added, so devices that were connected while another user (or the login screen) was active can end up belonging to that user. Re-running re-applies access for the current session.
+- **Log out and back in**, or reboot, if re-running doesn't help.
+- **Make sure you're in a local session.** Access only goes to the session at the physical seat, so it won't work over SSH, or from a session that isn't the active one.
+- As a last resort you can add yourself to the `input` group (`sudo usermod -aG input $USER`, then log out and back in). This works regardless of session, but lets every program you run read your keyboard, so the udev rule is preferred.
+
+## Config
 
 wbindkeys loads its config from `$XDG_CONFIG_HOME/wbindkeys/init.lua`, which is `~/.config/wbindkeys/init.lua` unless you have set `$XDG_CONFIG_HOME`. The file must exist, otherwise wbindkeys exits with an error on startup.
 
@@ -51,7 +111,7 @@ bind("ALT+ScrollUp", "pactl set-sink-volume @DEFAULT_SINK@ +5%")
 
 After changing the config, restart the service: `systemctl --user restart wbindkeys.service`.
 
-#### Key names
+### Key names
 
 Key names are case-insensitive and joined with `+`.
 
@@ -67,7 +127,7 @@ Key names are case-insensitive and joined with `+`.
 
 `ALT`, `CTRL`, `SHIFT` and `MOD` refer to the left-hand keys; use the `RIGHT…` names to bind the right-hand ones. When a binding has several modifiers, press them in the order they are written (`CTRL+ALT+T` means Ctrl, then Alt, then T). Unknown key names are ignored; run with `--debug` to see them.
 
-### Command line
+## Command line
 
 ```
 wbindkeys                              run wbindkeys (this is what the service does)
@@ -78,7 +138,7 @@ wbindkeys --help                       show all options
 wbindkeys --version                    show the version
 ```
 
-### Debugging your config
+## Debugging your config
 
 Run with `--debug` (or `-d`) to print log output to stderr: which input devices were opened, the config path being loaded, each registered binding and the key codes it maps to, any unrecognised key names, every key press with its combo, and whether a combo matched a binding.
 
@@ -87,14 +147,7 @@ systemctl --user stop wbindkeys.service
 wbindkeys --debug
 ```
 
-If the output shows `Permission denied` for input devices, check and fix access with the `permissions` subcommand:
-
-```sh
-wbindkeys permissions --check        # is the udev rule installed and are devices readable?
-sudo wbindkeys permissions --set     # install the udev rule and re-apply device access
-```
-
-`--check` should be run as your normal user, since that is who wbindkeys runs as. If `sudo` can't find `wbindkeys` (e.g. it is in `~/.local/bin`), use the full path: `sudo ~/.local/bin/wbindkeys permissions --set`.
+If the output shows `Failed to open input device ... Permission denied`, or key presses don't show up at all, see [Permissions](#permissions).
 
 ## Roadmap to 0.1.0
 - [x] Hook into input events via libinput

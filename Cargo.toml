@@ -2,6 +2,13 @@
 name = "wbindkeys"
 version = "0.1.0"
 edition = "2021"
+description = "A Wayland replacement for xbindkeys: bind keys, mouse buttons and scroll events to commands with a Lua config"
+license = "GPL-2.0-only"
+repository = "https://github.com/divanvisagie/wbindkeys"
+readme = "README.md"
+keywords = ["wayland", "hotkeys", "keybindings", "xbindkeys", "libinput"]
+categories = ["command-line-utilities"]
+exclude = [".github/", ".claude/", "testing/", "scripts/", "docs/", "templates/", "Makefile"]
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }

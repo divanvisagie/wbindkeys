@@ -1,7 +1,8 @@
 # Rust project makefile
 BIN='wbindkeys'
+VERSION=$(shell cargo pkgid | sed 's/.*[#@]//')
 
-.Phony : builddep permissions build-debug build-release install clean check run test-run
+.PHONY: builddep permissions build-debug build-release install clean check run test-run publish-check publish docs
 
 all: build-release
 
@@ -44,3 +45,26 @@ test-run: build-debug
 
 install: build-release
 	./scripts/install.sh
+
+# Regenerates the documentation website in docs/ (served by GitHub Pages)
+# from README.md, wbindkeys.1 and LICENSE. Needs pandoc and mandoc.
+docs: README.md wbindkeys.1 LICENSE templates/document.html templates/nav.html
+	./scripts/generate_docs.sh
+
+# Builds the crate exactly as it would be uploaded to crates.io, without
+# uploading anything.
+publish-check:
+	cargo test
+	cargo publish --dry-run --allow-dirty
+
+# Publishes the current version to crates.io and tags it as v$(VERSION).
+# Only runs from a clean main branch; crates.io versions can't be replaced,
+# so bump the version in Cargo.toml first. Push the tag afterwards with
+# `git push origin v$(VERSION)`.
+publish:
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = main || { echo "error: publish from the main branch"; exit 1; }
+	@test -z "$$(git status --porcelain)" || { echo "error: working tree has uncommitted changes"; exit 1; }
+	@! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "error: tag v$(VERSION) already exists, bump the version in Cargo.toml"; exit 1; }
+	cargo test
+	cargo publish
+	git tag -a "v$(VERSION)" -m "wbindkeys $(VERSION)"

@@ -1,0 +1,327 @@
+/*
+ * Documentation stylesheet for wbindkeys project
+ * Static CSS file for HTML documentation in docs/
+ *
+ * This file provides styling for:
+ * - index.html (repository overview)
+ * - wbindkeys.1.html (manual page)
+ *
+ * Do not regenerate this file - edit manually as needed.
+ */
+
+:root {
+    --border-radius: 0px;
+}
+
+/* Light mode (default) */
+body {
+    font-family:
+        "JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #000;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.3rem;
+    }
+
+    .nav {
+        padding: 0.75rem;
+    }
+
+    .nav ul {
+        flex-wrap: wrap;
+    }
+
+    .nav ul {
+        gap: 0.75rem;
+    }
+
+    pre {
+        padding: 0.75rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    code {
+        padding: 0.15rem 0.3rem;
+        word-break: break-word;
+    }
+
+    table {
+        font-size: 0.85rem;
+        overflow-x: auto;
+        display: block;
+        white-space: nowrap;
+    }
+
+    th,
+    td {
+        padding: 0.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    .nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    pre {
+        padding: 0.5rem;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 2rem;
+}
+
+h1 {
+    padding-bottom: 0.5rem;
+}
+
+code {
+    border: 1px solid #000;
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--border-radius);
+    font-family:
+        "JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+    background-color: #000;
+    color: #fff;
+}
+
+pre {
+    border: 1px solid #000;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+}
+
+pre code {
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+}
+
+blockquote {
+    border-left: 4px solid #000;
+    margin-left: 0;
+    padding-left: 1rem;
+    color: #000;
+}
+
+/* Use browser default link styling in light mode */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+th,
+td {
+    border: 1px solid #000;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+th {
+    font-weight: bold;
+}
+
+.nav {
+    border: 1px solid #000;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+}
+
+.nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav li {
+    display: flex;
+    align-items: center;
+    min-height: 2rem;
+}
+
+.nav a {
+    display: flex;
+    align-items: center;
+    min-height: 1.8rem;
+}
+
+#nav-title {
+    font-size: 1.2em;
+}
+
+#nav-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+#nav-title a:hover {
+    text-decoration: none;
+}
+
+/* Remove underlines from navigation links */
+.nav a {
+    text-decoration: none;
+}
+
+.nav a:hover {
+    text-decoration: underline;
+}
+
+/* Remove underlines from header links */
+h1 a,
+h2 a,
+h3 a,
+h4 a,
+h5 a,
+h6 a {
+    text-decoration: none;
+}
+
+h1 a:hover,
+h2 a:hover,
+h3 a:hover,
+h4 a:hover,
+h5 a:hover,
+h6 a:hover {
+    text-decoration: underline;
+}
+
+dl dt {
+    font-weight: bold;
+    margin-top: 1rem;
+}
+
+dl dd {
+    margin-left: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Use browser default selection styling */
+
+/* Dark mode - optimized for LCD/OLED comfort */
+@media (prefers-color-scheme: dark) {
+    body {
+        color: #b3b3b3;
+        background-color: #0f0f0f;
+    }
+
+    code {
+        border: 1px solid #404040;
+        background-color: #1a1a1a;
+        color: #cccccc;
+    }
+
+    pre {
+        border: 1px solid #404040;
+        background-color: #0d0d0d;
+        color: #b3b3b3;
+    }
+
+    blockquote {
+        border-left: 4px solid #525252;
+        color: #999999;
+    }
+
+    /* Dark mode link styling for readability */
+    a {
+        color: #7dd3fc;
+    }
+
+    a:hover {
+        color: #38bdf8;
+    }
+
+    a:visited {
+        color: #c084fc;
+    }
+
+    th,
+    td {
+        border: 1px solid #404040;
+    }
+
+    th {
+        background-color: #1a1a1a;
+        color: #b3b3b3;
+    }
+
+    .nav {
+        border: 1px solid #404040;
+        background-color: #0d0d0d;
+    }
+
+    #nav-title a {
+        color: inherit;
+    }
+
+    /* Dark mode specific adjustments - softer whites */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: #cccccc;
+    }
+
+    dt {
+        color: #cccccc;
+    }
+
+    dd {
+        color: #b3b3b3;
+    }
+}
