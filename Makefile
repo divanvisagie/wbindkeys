@@ -2,11 +2,18 @@
 BIN='wbindkeys'
 VERSION=$(shell cargo pkgid | sed 's/.*[#@]//')
 
-.PHONY: builddep permissions build-debug build-release install clean check run test-run publish-check publish docs
+.DEFAULT_GOAL := help
 
-all: build-release
+.PHONY: help all builddep permissions build-debug build-release install clean check run test-run publish-check publish docs
 
-builddep:
+help: ## Show this help
+	@echo "Usage: make <target>"
+	@echo
+	@awk 'BEGIN { FS = ":.*## " } /^[a-z-]+:.*## / { printf "  \033[1m%-14s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+all: build-release ## Build the release binary
+
+builddep: ## Install Rust and build dependencies (Debian/Ubuntu)
 	command -v rustc >/dev/null 2>&1 || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 	sudo apt-get update
 	sudo apt-get install -y pkg-config libevdev-dev libudev-dev libinput-dev
@@ -14,22 +21,22 @@ builddep:
 # Installs the udev rule that lets wbindkeys read input devices as your user
 # and re-triggers udev so existing devices get access. Safe to re-run, e.g.
 # when --debug shows "Permission denied" for input devices.
-permissions: build-debug
+permissions: build-debug ## Grant your user access to input devices (sudo)
 	sudo ./target/debug/$(BIN) permissions --set
 
-build-debug: src/main.rs
+build-debug: src/main.rs ## Build the debug binary
 	cargo build
 
-build-release: src/main.rs
+build-release: src/main.rs ## Build the release binary
 	cargo build --release
 
-clean:
+clean: ## Remove build artifacts
 	cargo clean
 
-check:
+check: ## Type-check without building
 	cargo check
 
-run: build-debug
+run: build-debug ## Build and run with your config
 	./target/debug/$(BIN)
 
 # Runs wbindkeys against testing/config/wbindkeys/init.lua instead of the
@@ -40,20 +47,20 @@ run: build-debug
 #
 # Uses sudo regardless of `wbindkeys permissions --set`'s udev/seat ACL setup, so
 # this keeps working for local testing even before that has been run.
-test-run: build-debug
+test-run: build-debug ## Run against the test config (sudo)
 	XDG_CONFIG_HOME=$(CURDIR)/testing/config sudo --preserve-env=XDG_CONFIG_HOME ./target/debug/$(BIN)
 
-install: build-release
+install: build-release ## Install to ~/.local/bin and start the user service
 	./scripts/install.sh
 
 # Regenerates the documentation website in docs/ (served by GitHub Pages)
 # from README.md, wbindkeys.1 and LICENSE. Needs pandoc and mandoc.
-docs: README.md wbindkeys.1 LICENSE templates/document.html templates/nav.html
+docs: README.md wbindkeys.1 LICENSE templates/document.html templates/nav.html ## Regenerate the docs site in docs/
 	./scripts/generate_docs.sh
 
 # Builds the crate exactly as it would be uploaded to crates.io, without
 # uploading anything.
-publish-check:
+publish-check: ## Test and dry-run the crates.io publish
 	cargo test
 	cargo publish --dry-run --allow-dirty
 
@@ -61,7 +68,7 @@ publish-check:
 # Only runs from a clean main branch; crates.io versions can't be replaced,
 # so bump the version in Cargo.toml first. Push the tag afterwards with
 # `git push origin v$(VERSION)`.
-publish:
+publish: ## Publish to crates.io and tag the version (from main)
 	@test "$$(git rev-parse --abbrev-ref HEAD)" = main || { echo "error: publish from the main branch"; exit 1; }
 	@test -z "$$(git status --porcelain)" || { echo "error: working tree has uncommitted changes"; exit 1; }
 	@! git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null || { echo "error: tag v$(VERSION) already exists, bump the version in Cargo.toml"; exit 1; }

@@ -158,7 +158,7 @@ If the output shows `Failed to open input device ... Permission denied`, or key 
 ```sh
 make builddep
 make permissions    # once, so you can read input devices without sudo
-make build-debug    # or `make` for a release build
+make build-debug    # or `make build-release`; run `make` to list all targets
 cargo test
 ```
 
