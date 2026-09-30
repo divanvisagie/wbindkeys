@@ -1,14 +1,18 @@
 # wbindkeys
-A wayland replacement for `xbindkeys`
+A Wayland replacement for `xbindkeys`.
 
-Bind keys, key combos, mouse buttons and scroll events to shell commands, configured in Lua.
+The way that Wayland works these days means that in general your keybinds are now attached to the desktop environment that you are using.
+This breaks the Unix philosophy and does not allow you to move a keybind config across desktop environments with ease like you used to be
+able to with xbindkeys.
 
-## Philosophy 
+wbindkeys allows you to bind keys, key combos, mouse buttons and scroll events to shell commands, all configured in Lua.
 
-While wbindkeys intends to replace xbindkeys, in the spirit of wayland being a replacement with a better API, wbindkeys will offer a new 
+## Philosophy
+
+While wbindkeys intends to replace xbindkeys, in the spirit of Wayland being a replacement with a better API, wbindkeys will offer a new
 configuration file language that is easier to handle for both machines and humans alike.
 
-`wbindkeys` uses lua for maximum configurability, because sometimes you need an if statement in your config.
+wbindkeys uses Lua for maximum configurability, because sometimes you need an if statement in your config.
 
 wbindkeys reads input directly from your input devices through libinput rather than through the compositor, so it works the same under any Wayland compositor. This is also why it needs permission to read `/dev/input` (see [Permissions](#permissions)).
 
@@ -100,7 +104,7 @@ wbindkeys loads its config from `$XDG_CONFIG_HOME/wbindkeys/init.lua`, which is 
 Each binding maps a key combo to a shell command:
 
 ```lua
--- Run alacritty on ALT+A
+-- Run Alacritty on ALT+A
 bind("ALT+A", "alacritty")
 -- Run Telegram on ALT+T
 bind("ALT+T", "flatpak run org.telegram.desktop")
@@ -149,17 +153,7 @@ wbindkeys --debug
 
 If the output shows `Failed to open input device ... Permission denied`, or key presses don't show up at all, see [Permissions](#permissions).
 
-## Roadmap to 0.1.0
-- [x] Hook into input events via libinput
-- [x] Get a binding to execute a print from a lua binding config
-- [x] Execute the command 
-- [x] Fix for launching app in userspace on the users privilege level
-- [x] Mouse button and scroll wheel bindings
-- [x] `--debug` output and `permissions` command for troubleshooting
-- [ ] Implement and test full range of keymaps
-- [ ] Debian installer
-
-## Development Setup 
+## Development setup
 
 ```sh
 make builddep

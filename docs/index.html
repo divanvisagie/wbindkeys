@@ -21,16 +21,21 @@
     </ul>
 </nav>
 <h1 id="wbindkeys">wbindkeys</h1>
-<p>A wayland replacement for <code>xbindkeys</code></p>
-<p>Bind keys, key combos, mouse buttons and scroll events to shell
-commands, configured in Lua.</p>
+<p>A Wayland replacement for <code>xbindkeys</code>.</p>
+<p>The way that Wayland works these days means that in general your
+keybinds are now attached to the desktop environment that you are using.
+This breaks the Unix philosophy and does not allow you to move a keybind
+config across desktop environments with ease like you used to be able to
+with xbindkeys.</p>
+<p>wbindkeys allows you to bind keys, key combos, mouse buttons and
+scroll events to shell commands, all configured in Lua.</p>
 <h2 id="philosophy">Philosophy</h2>
 <p>While wbindkeys intends to replace xbindkeys, in the spirit of
-wayland being a replacement with a better API, wbindkeys will offer a
+Wayland being a replacement with a better API, wbindkeys will offer a
 new configuration file language that is easier to handle for both
 machines and humans alike.</p>
-<p><code>wbindkeys</code> uses lua for maximum configurability, because
-sometimes you need an if statement in your config.</p>
+<p>wbindkeys uses Lua for maximum configurability, because sometimes you
+need an if statement in your config.</p>
 <p>wbindkeys reads input directly from your input devices through
 libinput rather than through the compositor, so it works the same under
 any Wayland compositor. This is also why it needs permission to read
@@ -125,7 +130,7 @@ read your keyboard, so the udev rule is preferred.</li>
 exits with an error on startup.</p>
 <p>Each binding maps a key combo to a shell command:</p>
 <div class="sourceCode" id="cb8"><pre
-class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Run alacritty on ALT+A</span></span>
+class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Run Alacritty on ALT+A</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+A&quot;</span><span class="op">,</span> <span class="st">&quot;alacritty&quot;</span><span class="op">)</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Run Telegram on ALT+T</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+T&quot;</span><span class="op">,</span> <span class="st">&quot;flatpak run org.telegram.desktop&quot;</span><span class="op">)</span></span>
@@ -212,26 +217,7 @@ class="sourceCode sh"><code class="sourceCode bash"><span id="cb10-1"><a href="#
 <code>Failed to open input device ... Permission denied</code>, or key
 presses don't show up at all, see <a
 href="#permissions">Permissions</a>.</p>
-<h2 id="roadmap-to-010">Roadmap to 0.1.0</h2>
-<ul class="task-list">
-<li><label><input type="checkbox" checked="" />Hook into input events
-via libinput</label></li>
-<li><label><input type="checkbox" checked="" />Get a binding to execute
-a print from a lua binding config</label></li>
-<li><label><input type="checkbox" checked="" />Execute the
-command</label></li>
-<li><label><input type="checkbox" checked="" />Fix for launching app in
-userspace on the users privilege level</label></li>
-<li><label><input type="checkbox" checked="" />Mouse button and scroll
-wheel bindings</label></li>
-<li><label><input type="checkbox" checked="" /><code>--debug</code>
-output and <code>permissions</code> command for
-troubleshooting</label></li>
-<li><label><input type="checkbox" />Implement and test full range of
-keymaps</label></li>
-<li><label><input type="checkbox" />Debian installer</label></li>
-</ul>
-<h2 id="development-setup">Development Setup</h2>
+<h2 id="development-setup">Development setup</h2>
 <div class="sourceCode" id="cb11"><pre
 class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
