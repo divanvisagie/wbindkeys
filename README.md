@@ -1,4 +1,7 @@
 # wbindkeys
+
+[![Crates.io](https://img.shields.io/crates/v/wbindkeys.svg)](https://crates.io/crates/wbindkeys)
+
 A Wayland replacement for `xbindkeys`.
 
 The way that Wayland works these days means that in general your keybinds are now attached to the desktop environment that you are using.
