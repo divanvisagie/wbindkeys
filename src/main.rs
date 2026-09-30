@@ -192,6 +192,8 @@ fn main() {
                     if key == Keys::LeftAlt as u32
                         || key == Keys::LeftCtrl as u32
                         || key == Keys::LeftMod as u32
+                        || key == Keys::LeftShift as u32
+                        || key == Keys::RightShift as u32
                         || key == Keys::Space as u32
                         || key == Keys::RightCtrl as u32
                         || key == Keys::RightMod as u32
