@@ -118,14 +118,14 @@ Key names are case-insensitive and joined with `+`.
 | Kind | Names |
 |---|---|
 | Modifiers | `ALT`, `CTRL`, `SHIFT`, `MOD` (the Super/Windows key), `SPACE` |
-| Right-hand modifiers | `RIGHTALT`, `RIGHTCTRL`, `RIGHTSHIFT`, `RIGHTMOD` |
+| One-sided modifiers | `LEFTALT`, `LEFTCTRL`, `LEFTSHIFT`, `LEFTMOD`, `RIGHTALT`, `RIGHTCTRL`, `RIGHTSHIFT`, `RIGHTMOD` |
 | Letters and numbers | `A`–`Z`, `0`–`9` |
 | Function keys | `F1`–`F12` |
 | Navigation | `UP`, `DOWN`, `LEFT`, `RIGHT`, `HOME`, `END`, `PAGEUP`, `PAGEDOWN`, `INSERT`, `DELETE` |
 | Other keys | `ESCAPE`, `ENTER`, `BACKSPACE`, `TAB`, `BACKTICK`, `COMMA`, `PERIOD`, `SLASH`, `BACKSLASH`, `SEMICOLON`, `QUOTE`, `DASH`, `EQUAL`, `LEFTSQUARE`, `RIGHTSQUARE` |
 | Mouse | `MOUSE1`–`MOUSE10`, `SCROLLUP`, `SCROLLDOWN`, `SCROLLLEFT`, `SCROLLRIGHT` |
 
-`ALT`, `CTRL`, `SHIFT` and `MOD` refer to the left-hand keys; use the `RIGHT…` names to bind the right-hand ones. When a binding has several modifiers, press them in the order they are written (`CTRL+ALT+T` means Ctrl, then Alt, then T). Unknown key names are ignored; run with `--debug` to see them.
+`ALT`, `CTRL`, `SHIFT` and `MOD` match the key on either side of the keyboard; use the `LEFT…` and `RIGHT…` names to bind only one side. If a combo matches more than one binding, the one-sided binding wins, so with both `ALT+E` and `RIGHTALT+E` bound, Right Alt+E runs the `RIGHTALT+E` command. When a binding has several modifiers, press them in the order they are written (`CTRL+ALT+T` means Ctrl, then Alt, then T). Unknown key names are ignored; run with `--debug` to see them.
 
 ## Command line
 

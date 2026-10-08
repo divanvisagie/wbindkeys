@@ -132,9 +132,12 @@ Key names are case-insensitive and joined with
 The available names are:
 .Bl -tag -width Ds
 .It Modifiers
-ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the right-hand
-RIGHTALT, RIGHTCTRL, RIGHTSHIFT, RIGHTMOD.
-ALT, CTRL, SHIFT and MOD refer to the left-hand keys.
+ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the one-sided
+LEFTALT, LEFTCTRL, LEFTSHIFT, LEFTMOD, RIGHTALT, RIGHTCTRL, RIGHTSHIFT,
+RIGHTMOD.
+ALT, CTRL, SHIFT and MOD match the key on either side of the keyboard; the
+LEFT and RIGHT names match only that side.
+If a combination matches more than one binding, the one-sided binding wins.
 .It Letters, numbers and function keys
 A to Z, 0 to 9, F1 to F12.
 .It Navigation

@@ -97,116 +97,126 @@ pub enum Keys {
     ScrollDown = 0x999,
     }
 
-pub fn parse_binding(binding: &str) -> Vec<u32> {
+/// Parses a binding like "ALT+T" into the key codes that can satisfy each of
+/// its parts, in order. `ALT`, `CTRL`, `SHIFT` and `MOD` accept either the
+/// left- or right-hand key; every other name accepts exactly one key.
+pub fn parse_binding(binding: &str) -> Vec<Vec<u32>> {
     let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
 
     let mut keys = Vec::new();
     for string in strings {
         match string.to_uppercase().as_str() {
-            "A" => keys.push(Keys::A as u32),
-            "B" => keys.push(Keys::B as u32),
-            "C" => keys.push(Keys::C as u32),
-            "D" => keys.push(Keys::D as u32),
-            "E" => keys.push(Keys::E as u32),
-            "F" => keys.push(Keys::F as u32),
-            "G" => keys.push(Keys::G as u32),
-            "H" => keys.push(Keys::H as u32),
-            "I" => keys.push(Keys::I as u32),
-            "J" => keys.push(Keys::J as u32),
-            "K" => keys.push(Keys::K as u32),
-            "L" => keys.push(Keys::L as u32),
-            "M" => keys.push(Keys::M as u32),
-            "N" => keys.push(Keys::N as u32),
-            "O" => keys.push(Keys::O as u32),
-            "P" => keys.push(Keys::P as u32),
-            "Q" => keys.push(Keys::Q as u32),
-            "R" => keys.push(Keys::R as u32),
-            "S" => keys.push(Keys::S as u32),
-            "T" => keys.push(Keys::T as u32),
-            "U" => keys.push(Keys::U as u32),
-            "V" => keys.push(Keys::V as u32),
-            "W" => keys.push(Keys::W as u32),
-            "X" => keys.push(Keys::X as u32),
-            "Y" => keys.push(Keys::Y as u32),
-            "Z" => keys.push(Keys::Z as u32),
-            "0" => keys.push(Keys::Num0 as u32),
-            "1" => keys.push(Keys::Num1 as u32),
-            "2" => keys.push(Keys::Num2 as u32),
-            "3" => keys.push(Keys::Num3 as u32),
-            "4" => keys.push(Keys::Num4 as u32),
-            "5" => keys.push(Keys::Num5 as u32),
-            "6" => keys.push(Keys::Num6 as u32),
-            "7" => keys.push(Keys::Num7 as u32),
-            "8" => keys.push(Keys::Num8 as u32),
-            "9" => keys.push(Keys::Num9 as u32),
-            "BACKTICK" => keys.push(Keys::BackTick as u32),
-            "ESCAPE" => keys.push(Keys::Escape as u32),
-            "F1" => keys.push(Keys::F1 as u32),
-            "F2" => keys.push(Keys::F2 as u32),
-            "F3" => keys.push(Keys::F3 as u32),
-            "F4" => keys.push(Keys::F4 as u32),
-            "F5" => keys.push(Keys::F5 as u32),
-            "F6" => keys.push(Keys::F6 as u32),
-            "F7" => keys.push(Keys::F7 as u32),
-            "F8" => keys.push(Keys::F8 as u32),
-            "F9" => keys.push(Keys::F9 as u32),
-            "F10" => keys.push(Keys::F10 as u32),
-            "F11" => keys.push(Keys::F11 as u32),
-            "F12" => keys.push(Keys::F12 as u32),
-            "LEFTALT" => keys.push(Keys::LeftAlt as u32),
-            "LEFTCTRL" => keys.push(Keys::LeftCtrl as u32),
-            "LEFTSHIFT" => keys.push(Keys::LeftShift as u32),
-            "CTRL" => keys.push(Keys::LeftCtrl as u32), // Assuming "Ctrl" refers to "LeftCtrl"
-            "LEFTMOD" => keys.push(Keys::LeftMod as u32),
-            "ALT" => keys.push(Keys::LeftAlt as u32), // Assuming "Alt" refers to "LeftAlt"
-            "SHIFT" => keys.push(Keys::LeftShift as u32), // Assuming "Shift" refers to "LeftShift"
-            "MOD" => keys.push(Keys::LeftMod as u32), // Assuming "Mod" refers to "LeftMod"
-            "SPACE" => keys.push(Keys::Space as u32),
-            "ENTER" => keys.push(Keys::Enter as u32),
-            "BACKSPACE" => keys.push(Keys::Backspace as u32),
-            "TAB" => keys.push(Keys::Tab as u32),
-            "UP" => keys.push(Keys::Up as u32),
-            "DOWN" => keys.push(Keys::Down as u32),
-            "LEFT" => keys.push(Keys::Left as u32),
-            "RIGHT" => keys.push(Keys::Right as u32),
-            "INSERT" => keys.push(Keys::Insert as u32),
-            "DELETE" => keys.push(Keys::Delete as u32),
-            "HOME" => keys.push(Keys::Home as u32),
-            "END" => keys.push(Keys::End as u32),
-            "PAGEUP" => keys.push(Keys::PageUp as u32),
-            "PAGEDOWN" => keys.push(Keys::PageDown as u32),
-            "COMMA"=> keys.push(Keys::Comma as u32),
-            "PERIOD"=> keys.push(Keys::Period as u32),
-            "SLASH"=> keys.push(Keys::Slash as u32),
-            "RIGHTCTRL"=> keys.push(Keys::RightCtrl as u32),
-            "RIGHTALT"=> keys.push(Keys::RightAlt as u32),
-            "RIGHTSHIFT"=> keys.push(Keys::RightShift as u32),
-            "RIGHTMOD"=> keys.push(Keys::RightMod as u32),
-            "LEFTSQUARE"=> keys.push(Keys::LeftSquare as u32),
-            "RIGHTSQUARE"=> keys.push(Keys::RightSquare as u32),
-            "SEMICOLON"=> keys.push(Keys::SemiColon as u32),
-            "QUOTE"=> keys.push(Keys::Quote as u32),
-            "BACKSLASH"=> keys.push(Keys::BackSlash as u32),
-            "DASH"=> keys.push(Keys::Dash as u32),
-            "EQUAL"=> keys.push(Keys::Equal as u32),
-            "MOUSE1"=> keys.push(Keys::Mouse1 as u32),
-            "MOUSE2"=> keys.push(Keys::Mouse2 as u32),
-            "MOUSE3"=> keys.push(Keys::Mouse3 as u32),
-            "MOUSE4"=> keys.push(Keys::Mouse4 as u32),
-            "MOUSE5"=> keys.push(Keys::Mouse5 as u32),
-            "MOUSE6"=> keys.push(Keys::Mouse6 as u32),
-            "MOUSE7"=> keys.push(Keys::Mouse7 as u32),
-            "MOUSE8"=> keys.push(Keys::Mouse8 as u32),
-            "MOUSE9"=> keys.push(Keys::Mouse9 as u32),
-            "MOUSE10"=> keys.push(Keys::Mouse10 as u32),
-            "SCROLLLEFT"=> keys.push(Keys::ScrollLeft as u32),
-            "SCROLLRIGHT"=> keys.push(Keys::ScrollRight as u32),
-            "SCROLLUP"=> keys.push(Keys::ScrollUp as u32),
-            "SCROLLDOWN"=> keys.push(Keys::ScrollDown as u32),
+            "A" => keys.push(vec![Keys::A as u32]),
+            "B" => keys.push(vec![Keys::B as u32]),
+            "C" => keys.push(vec![Keys::C as u32]),
+            "D" => keys.push(vec![Keys::D as u32]),
+            "E" => keys.push(vec![Keys::E as u32]),
+            "F" => keys.push(vec![Keys::F as u32]),
+            "G" => keys.push(vec![Keys::G as u32]),
+            "H" => keys.push(vec![Keys::H as u32]),
+            "I" => keys.push(vec![Keys::I as u32]),
+            "J" => keys.push(vec![Keys::J as u32]),
+            "K" => keys.push(vec![Keys::K as u32]),
+            "L" => keys.push(vec![Keys::L as u32]),
+            "M" => keys.push(vec![Keys::M as u32]),
+            "N" => keys.push(vec![Keys::N as u32]),
+            "O" => keys.push(vec![Keys::O as u32]),
+            "P" => keys.push(vec![Keys::P as u32]),
+            "Q" => keys.push(vec![Keys::Q as u32]),
+            "R" => keys.push(vec![Keys::R as u32]),
+            "S" => keys.push(vec![Keys::S as u32]),
+            "T" => keys.push(vec![Keys::T as u32]),
+            "U" => keys.push(vec![Keys::U as u32]),
+            "V" => keys.push(vec![Keys::V as u32]),
+            "W" => keys.push(vec![Keys::W as u32]),
+            "X" => keys.push(vec![Keys::X as u32]),
+            "Y" => keys.push(vec![Keys::Y as u32]),
+            "Z" => keys.push(vec![Keys::Z as u32]),
+            "0" => keys.push(vec![Keys::Num0 as u32]),
+            "1" => keys.push(vec![Keys::Num1 as u32]),
+            "2" => keys.push(vec![Keys::Num2 as u32]),
+            "3" => keys.push(vec![Keys::Num3 as u32]),
+            "4" => keys.push(vec![Keys::Num4 as u32]),
+            "5" => keys.push(vec![Keys::Num5 as u32]),
+            "6" => keys.push(vec![Keys::Num6 as u32]),
+            "7" => keys.push(vec![Keys::Num7 as u32]),
+            "8" => keys.push(vec![Keys::Num8 as u32]),
+            "9" => keys.push(vec![Keys::Num9 as u32]),
+            "BACKTICK" => keys.push(vec![Keys::BackTick as u32]),
+            "ESCAPE" => keys.push(vec![Keys::Escape as u32]),
+            "F1" => keys.push(vec![Keys::F1 as u32]),
+            "F2" => keys.push(vec![Keys::F2 as u32]),
+            "F3" => keys.push(vec![Keys::F3 as u32]),
+            "F4" => keys.push(vec![Keys::F4 as u32]),
+            "F5" => keys.push(vec![Keys::F5 as u32]),
+            "F6" => keys.push(vec![Keys::F6 as u32]),
+            "F7" => keys.push(vec![Keys::F7 as u32]),
+            "F8" => keys.push(vec![Keys::F8 as u32]),
+            "F9" => keys.push(vec![Keys::F9 as u32]),
+            "F10" => keys.push(vec![Keys::F10 as u32]),
+            "F11" => keys.push(vec![Keys::F11 as u32]),
+            "F12" => keys.push(vec![Keys::F12 as u32]),
+            "LEFTALT" => keys.push(vec![Keys::LeftAlt as u32]),
+            "LEFTCTRL" => keys.push(vec![Keys::LeftCtrl as u32]),
+            "LEFTSHIFT" => keys.push(vec![Keys::LeftShift as u32]),
+            "CTRL" => keys.push(vec![Keys::LeftCtrl as u32, Keys::RightCtrl as u32]),
+            "LEFTMOD" => keys.push(vec![Keys::LeftMod as u32]),
+            "ALT" => keys.push(vec![Keys::LeftAlt as u32, Keys::RightAlt as u32]),
+            "SHIFT" => keys.push(vec![Keys::LeftShift as u32, Keys::RightShift as u32]),
+            "MOD" => keys.push(vec![Keys::LeftMod as u32, Keys::RightMod as u32]),
+            "SPACE" => keys.push(vec![Keys::Space as u32]),
+            "ENTER" => keys.push(vec![Keys::Enter as u32]),
+            "BACKSPACE" => keys.push(vec![Keys::Backspace as u32]),
+            "TAB" => keys.push(vec![Keys::Tab as u32]),
+            "UP" => keys.push(vec![Keys::Up as u32]),
+            "DOWN" => keys.push(vec![Keys::Down as u32]),
+            "LEFT" => keys.push(vec![Keys::Left as u32]),
+            "RIGHT" => keys.push(vec![Keys::Right as u32]),
+            "INSERT" => keys.push(vec![Keys::Insert as u32]),
+            "DELETE" => keys.push(vec![Keys::Delete as u32]),
+            "HOME" => keys.push(vec![Keys::Home as u32]),
+            "END" => keys.push(vec![Keys::End as u32]),
+            "PAGEUP" => keys.push(vec![Keys::PageUp as u32]),
+            "PAGEDOWN" => keys.push(vec![Keys::PageDown as u32]),
+            "COMMA"=> keys.push(vec![Keys::Comma as u32]),
+            "PERIOD"=> keys.push(vec![Keys::Period as u32]),
+            "SLASH"=> keys.push(vec![Keys::Slash as u32]),
+            "RIGHTCTRL"=> keys.push(vec![Keys::RightCtrl as u32]),
+            "RIGHTALT"=> keys.push(vec![Keys::RightAlt as u32]),
+            "RIGHTSHIFT"=> keys.push(vec![Keys::RightShift as u32]),
+            "RIGHTMOD"=> keys.push(vec![Keys::RightMod as u32]),
+            "LEFTSQUARE"=> keys.push(vec![Keys::LeftSquare as u32]),
+            "RIGHTSQUARE"=> keys.push(vec![Keys::RightSquare as u32]),
+            "SEMICOLON"=> keys.push(vec![Keys::SemiColon as u32]),
+            "QUOTE"=> keys.push(vec![Keys::Quote as u32]),
+            "BACKSLASH"=> keys.push(vec![Keys::BackSlash as u32]),
+            "DASH"=> keys.push(vec![Keys::Dash as u32]),
+            "EQUAL"=> keys.push(vec![Keys::Equal as u32]),
+            "MOUSE1"=> keys.push(vec![Keys::Mouse1 as u32]),
+            "MOUSE2"=> keys.push(vec![Keys::Mouse2 as u32]),
+            "MOUSE3"=> keys.push(vec![Keys::Mouse3 as u32]),
+            "MOUSE4"=> keys.push(vec![Keys::Mouse4 as u32]),
+            "MOUSE5"=> keys.push(vec![Keys::Mouse5 as u32]),
+            "MOUSE6"=> keys.push(vec![Keys::Mouse6 as u32]),
+            "MOUSE7"=> keys.push(vec![Keys::Mouse7 as u32]),
+            "MOUSE8"=> keys.push(vec![Keys::Mouse8 as u32]),
+            "MOUSE9"=> keys.push(vec![Keys::Mouse9 as u32]),
+            "MOUSE10"=> keys.push(vec![Keys::Mouse10 as u32]),
+            "SCROLLLEFT"=> keys.push(vec![Keys::ScrollLeft as u32]),
+            "SCROLLRIGHT"=> keys.push(vec![Keys::ScrollRight as u32]),
+            "SCROLLUP"=> keys.push(vec![Keys::ScrollUp as u32]),
+            "SCROLLDOWN"=> keys.push(vec![Keys::ScrollDown as u32]),
             _ => debug!("Unknown key {:?} in binding {:?}, ignoring", string, binding),
         }
     }
     keys
+}
+
+/// Whether a pressed combo (key codes in the order they were pressed)
+/// satisfies a parsed binding.
+pub fn matches(binding: &[Vec<u32>], combo: &[u32]) -> bool {
+    binding.len() == combo.len()
+        && binding.iter().zip(combo).all(|(choices, key)| choices.contains(key))
 }
 
 #[cfg(test)]
@@ -302,7 +312,7 @@ mod tests {
         ];
 
         for (input, expected_output) in test_cases {
-            assert_eq!(parse_binding(input), vec![expected_output], "Failed for input: {}", input);
+            assert_eq!(parse_binding(input), vec![vec![expected_output]], "Failed for input: {}", input);
         }
     }
 
@@ -326,8 +336,54 @@ mod tests {
             ("MOD+SHIFT+DASH", vec![KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_MINUS]),
         ];
 
-        for (input, expected_output) in test_cases {
-            assert_eq!(parse_binding(input), expected_output, "Failed for input: {}", input);
+        for (input, pressed) in test_cases {
+            assert!(matches(&parse_binding(input), &pressed), "Failed for input: {}", input);
         }
+    }
+
+    #[test]
+    fn test_generic_modifiers_match_either_side() {
+        let test_cases = [
+            ("ALT+T", Keys::LeftAlt, Keys::RightAlt),
+            ("CTRL+T", Keys::LeftCtrl, Keys::RightCtrl),
+            ("SHIFT+T", Keys::LeftShift, Keys::RightShift),
+            ("MOD+T", Keys::LeftMod, Keys::RightMod),
+        ];
+
+        for (input, left, right) in test_cases {
+            let binding = parse_binding(input);
+            assert!(matches(&binding, &[left as u32, Keys::T as u32]), "left side failed for {}", input);
+            assert!(matches(&binding, &[right as u32, Keys::T as u32]), "right side failed for {}", input);
+        }
+    }
+
+    #[test]
+    fn test_sided_modifiers_match_one_side() {
+        let test_cases = [
+            ("LEFTALT+T", Keys::LeftAlt, Keys::RightAlt),
+            ("RIGHTALT+T", Keys::RightAlt, Keys::LeftAlt),
+            ("LEFTCTRL+T", Keys::LeftCtrl, Keys::RightCtrl),
+            ("RIGHTCTRL+T", Keys::RightCtrl, Keys::LeftCtrl),
+            ("LEFTSHIFT+T", Keys::LeftShift, Keys::RightShift),
+            ("RIGHTSHIFT+T", Keys::RightShift, Keys::LeftShift),
+            ("LEFTMOD+T", Keys::LeftMod, Keys::RightMod),
+            ("RIGHTMOD+T", Keys::RightMod, Keys::LeftMod),
+        ];
+
+        for (input, side, other) in test_cases {
+            let binding = parse_binding(input);
+            assert!(matches(&binding, &[side as u32, Keys::T as u32]), "{} should match its own side", input);
+            assert!(!matches(&binding, &[other as u32, Keys::T as u32]), "{} should not match the other side", input);
+        }
+    }
+
+    #[test]
+    fn test_matches_needs_the_whole_combo_in_order() {
+        let binding = parse_binding("CTRL+ALT+T");
+        let (ctrl, alt, t) = (Keys::LeftCtrl as u32, Keys::RightAlt as u32, Keys::T as u32);
+        assert!(matches(&binding, &[ctrl, alt, t]));
+        assert!(!matches(&binding, &[alt, ctrl, t]), "modifiers pressed out of order");
+        assert!(!matches(&binding, &[ctrl, t]), "missing a modifier");
+        assert!(!matches(&binding, &[ctrl, alt, Keys::LeftShift as u32, t]), "extra modifier");
     }
 }
