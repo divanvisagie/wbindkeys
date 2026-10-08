@@ -11,6 +11,9 @@
 .Cm permissions
 .Fl -check | -set
 .Nm
+.Cm service
+.Fl -install | -uninstall
+.Nm
 .Cm man
 .Op Fl -install
 .Nm
@@ -63,6 +66,25 @@ Install the udev rule in
 reload udev rules and re-trigger input devices so the current session gets
 access.
 Must be run as root.
+.It Cm service Fl -install
+Install
+.Nm
+as a service that starts when you log in, using the service manager the
+system runs, then enable and (re)start it.
+The service runs the binary this command was invoked as, so run it again
+after moving the binary.
+Run it as your normal user, not as root.
+.Pp
+Only
+.Xr systemd 1
+on Linux is supported for now, where this writes a user unit to
+.Pa $XDG_CONFIG_HOME/systemd/user/wbindkeys.service .
+On other systems it prints that the system is not supported yet and exits
+with status 1.
+.It Cm service Fl -uninstall
+Stop and disable the service and remove what
+.Cm service Fl -install
+set up.
 .It Cm man Op Fl -install
 Print this manual page.
 With
@@ -168,9 +190,10 @@ exits with an error if it does not exist.
 .It Pa /etc/udev/rules.d/69-wbindkeys.rules
 udev rule installed by
 .Cm permissions Fl -set .
-.It Pa ~/.config/systemd/user/wbindkeys.service
-systemd user service created by
-.Ic make install .
+.It Pa $XDG_CONFIG_HOME/systemd/user/wbindkeys.service
+systemd user unit written by
+.Cm service Fl -install
+on Linux.
 .El
 .Sh EXIT STATUS
 .Bl -tag -width Ds
@@ -182,7 +205,9 @@ found no problems.
 .Cm permissions Fl -check
 found a problem,
 .Cm permissions Fl -set
-failed, or
+failed,
+.Cm service
+failed or is not supported on this system, or
 .Cm man Fl -install
 could not write the page.
 .It 2
@@ -208,6 +233,13 @@ Check access:
 wbindkeys permissions --check
 .Ed
 .Pp
+Start
+.Nm
+automatically when you log in:
+.Bd -literal -offset indent
+wbindkeys service --install
+.Ed
+.Pp
 Install this manual page after
 .Ic cargo install wbindkeys :
 .Bd -literal -offset indent
@@ -217,6 +249,7 @@ man wbindkeys
 .Sh SEE ALSO
 .Xr xbindkeys 1 ,
 .Xr libinput 4 ,
+.Xr systemd.unit 5 ,
 .Xr udev 7 ,
 .Xr systemd-logind 8
 .Sh AUTHORS

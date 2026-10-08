@@ -7,7 +7,7 @@ const UDEV_RULE_PATH: &str = "/etc/udev/rules.d/69-wbindkeys.rules";
 const UDEV_RULE: &str =
     r#"ACTION=="add", KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess", TAG+="seat""#;
 
-fn is_root() -> bool {
+pub(crate) fn is_root() -> bool {
     unsafe { libc::geteuid() == 0 }
 }
 
@@ -140,7 +140,7 @@ pub fn set() -> Result<(), String> {
     Ok(())
 }
 
-fn run(program: &str, args: &[&str]) -> Result<(), String> {
+pub(crate) fn run(program: &str, args: &[&str]) -> Result<(), String> {
     let status = Command::new(program)
         .args(args)
         .status()

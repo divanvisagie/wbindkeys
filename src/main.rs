@@ -33,6 +33,7 @@ macro_rules! debug {
 mod parser;
 mod permissions;
 mod script_manager;
+mod service;
 
 struct WBindKeysInterface;
 
@@ -97,6 +98,8 @@ struct Args {
 enum Commands {
     /// Check or set up permission to read input devices
     Permissions(PermissionsArgs),
+    /// Install or remove wbindkeys as a service that starts when you log in
+    Service(ServiceArgs),
     /// Print the wbindkeys(1) manual page
     Man {
         /// Write it under ../share/man/man1 next to the wbindkeys binary
@@ -104,6 +107,18 @@ enum Commands {
         #[arg(long)]
         install: bool,
     },
+}
+
+#[derive(ClapArgs)]
+#[group(required = true, multiple = false)]
+struct ServiceArgs {
+    /// Install, enable and start the service for the current user
+    #[arg(long)]
+    install: bool,
+
+    /// Stop, disable and remove the service
+    #[arg(long)]
+    uninstall: bool,
 }
 
 const MAN_PAGE: &str = include_str!("../man/wbindkeys.1");
@@ -157,6 +172,11 @@ fn main() {
             } else {
                 permissions::check()
             };
+            std::process::exit(if ok { 0 } else { 1 });
+        }
+        Some(Commands::Service(service)) => {
+            let result = if service.install { service::install() } else { service::uninstall() };
+            let ok = result.map_err(|err| eprintln!("error: {}", err)).is_ok();
             std::process::exit(if ok { 0 } else { 1 });
         }
         Some(Commands::Man { install }) => {

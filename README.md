@@ -37,21 +37,13 @@ sudo ~/.cargo/bin/wbindkeys permissions --set
 wbindkeys man --install    # optional, so `man wbindkeys` works
 ```
 
-Then create a [config](#config) and run `wbindkeys`. To start it automatically when you log in, add a systemd user service at `~/.config/systemd/user/wbindkeys.service`:
+Then create a [config](#config) and run `wbindkeys`. To start it automatically when you log in, install it as a service:
 
-```ini
-[Unit]
-Description=wbindkeys service
-
-[Service]
-Type=simple
-ExecStart=%h/.cargo/bin/wbindkeys
-
-[Install]
-WantedBy=default.target
+```sh
+wbindkeys service --install
 ```
 
-and enable it with `systemctl --user enable --now wbindkeys.service`.
+This detects your system's service manager and sets up a per-user service that runs the `wbindkeys` binary you invoked it as. For now only systemd on Linux is supported, where it writes `~/.config/systemd/user/wbindkeys.service`. On anything else it tells you the system isn't supported yet; please [open an issue](https://github.com/divanvisagie/wbindkeys/issues) to ask for it. `wbindkeys service --uninstall` removes the service again.
 
 ### From source
 
@@ -61,7 +53,7 @@ make permissions    # grants access to input devices, see Permissions
 make install
 ```
 
-`make install` builds the release binary, copies it to `~/.local/bin` (with the man page in `~/.local/share/man/man1`), and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
+`make install` builds the release binary, copies it to `~/.local/bin` (with the man page in `~/.local/share/man/man1`), and runs `wbindkeys service --install` to install and start a per-user service that runs it.
 
 ## Permissions
 
@@ -142,6 +134,8 @@ wbindkeys                              run wbindkeys (this is what the service d
 wbindkeys --debug                      run with log output, see "Debugging your config"
 wbindkeys permissions --check          check wbindkeys can read your input devices
 sudo wbindkeys permissions --set       install the udev rule that grants that access
+wbindkeys service --install            start wbindkeys when you log in
+wbindkeys service --uninstall          stop that and remove the service
 wbindkeys man                          print the wbindkeys(1) man page
 wbindkeys man --install                install it next to the binary, see below
 wbindkeys --help                       show all options
