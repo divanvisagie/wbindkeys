@@ -305,4 +305,29 @@ mod tests {
             assert_eq!(parse_binding(input), vec![expected_output], "Failed for input: {}", input);
         }
     }
+
+    // Characters like `&` and `_` are bound by the physical key that types them.
+    // Expected values are the raw evdev codes from linux/input-event-codes.h.
+    #[test]
+    fn test_parse_layout_character_bindings() {
+        const KEY_1: u32 = 2;
+        const KEY_7: u32 = 8;
+        const KEY_8: u32 = 9;
+        const KEY_MINUS: u32 = 12;
+        const KEY_LEFTSHIFT: u32 = 42;
+        const KEY_LEFTMETA: u32 = 125;
+
+        let test_cases = [
+            // French AZERTY: & and _ are unshifted on the 1 and 8 keys
+            ("MOD+1", vec![KEY_LEFTMETA, KEY_1]),
+            ("MOD+8", vec![KEY_LEFTMETA, KEY_8]),
+            // US QWERTY: & is Shift+7, _ is Shift+-
+            ("MOD+SHIFT+7", vec![KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_7]),
+            ("MOD+SHIFT+DASH", vec![KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_MINUS]),
+        ];
+
+        for (input, expected_output) in test_cases {
+            assert_eq!(parse_binding(input), expected_output, "Failed for input: {}", input);
+        }
+    }
 }
