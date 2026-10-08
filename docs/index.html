@@ -52,30 +52,29 @@ packages to build. On Debian/Ubuntu:</p>
 package manager.</p>
 <h3 id="from-cratesio">From crates.io</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install wbindkeys</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ~/.cargo/bin/wbindkeys permissions <span class="at">--set</span></span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ~/.cargo/bin/wbindkeys permissions <span class="at">--set</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> man <span class="at">--install</span>    <span class="co"># optional, so `man wbindkeys` works</span></span></code></pre></div>
 <p>Then create a <a href="#config">config</a> and run
-<code>wbindkeys</code>. To start it automatically when you log in, add a
-systemd user service at
-<code>~/.config/systemd/user/wbindkeys.service</code>:</p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[Unit]</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">wbindkeys service</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">[Service]</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dt">Type</span><span class="ot">=</span><span class="st">simple</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="dt">ExecStart</span><span class="ot">=</span><span class="st">%h/.cargo/bin/wbindkeys</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">[Install]</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">default.target</span></span></code></pre></div>
-<p>and enable it with
-<code>systemctl --user enable --now wbindkeys.service</code>.</p>
+<code>wbindkeys</code>. To start it automatically when you log in,
+install it as a service:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> service <span class="at">--install</span></span></code></pre></div>
+<p>This detects your system's service manager and sets up a per-user
+service that runs the <code>wbindkeys</code> binary you invoked it as.
+For now only systemd on Linux is supported, where it writes
+<code>~/.config/systemd/user/wbindkeys.service</code>. On anything else
+it tells you the system isn't supported yet; please <a
+href="https://github.com/divanvisagie/wbindkeys/issues">open an
+issue</a> to ask for it. <code>wbindkeys service --uninstall</code>
+removes the service again.</p>
 <h3 id="from-source">From source</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep       <span class="co"># installs Rust (if needed) and the packages above, Debian/Ubuntu only</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># grants access to input devices, see Permissions</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
 <p><code>make install</code> builds the release binary, copies it to
-<code>~/.local/bin</code>, and installs + starts a systemd user service
-(<code>wbindkeys.service</code>) that runs it.</p>
+<code>~/.local/bin</code> (with the man page in
+<code>~/.local/share/man/man1</code>), and runs
+<code>wbindkeys service --install</code> to install and start a per-user
+service that runs it.</p>
 <h2 id="permissions">Permissions</h2>
 <p>wbindkeys reads your keyboard and mouse directly from
 <code>/dev/input</code>, which normal users can't read by default. It
@@ -158,8 +157,9 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#c
 <code>MOD</code> (the Super/Windows key), <code>SPACE</code></td>
 </tr>
 <tr>
-<td>Right-hand modifiers</td>
-<td><code>RIGHTALT</code>, <code>RIGHTCTRL</code>,
+<td>One-sided modifiers</td>
+<td><code>LEFTALT</code>, <code>LEFTCTRL</code>, <code>LEFTSHIFT</code>,
+<code>LEFTMOD</code>, <code>RIGHTALT</code>, <code>RIGHTCTRL</code>,
 <code>RIGHTSHIFT</code>, <code>RIGHTMOD</code></td>
 </tr>
 <tr>
@@ -195,9 +195,12 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#c
 </tbody>
 </table>
 <p><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code> and
-<code>MOD</code> refer to the left-hand keys; use the
-<code>RIGHT…</code> names to bind the right-hand ones. When a binding
-has several modifiers, press them in the order they are written
+<code>MOD</code> match the key on either side of the keyboard; use the
+<code>LEFT…</code> and <code>RIGHT…</code> names to bind only one side.
+If a combo matches more than one binding, the one-sided binding wins, so
+with both <code>ALT+E</code> and <code>RIGHTALT+E</code> bound, Right
+Alt+E runs the <code>RIGHTALT+E</code> command. When a binding has
+several modifiers, press them in the order they are written
 (<code>CTRL+ALT+T</code> means Ctrl, then Alt, then T). Unknown key
 names are ignored; run with <code>--debug</code> to see them.</p>
 <h2 id="command-line">Command line</h2>
@@ -205,8 +208,22 @@ names are ignored; run with <code>--debug</code> to see them.</p>
 wbindkeys --debug                      run with log output, see &quot;Debugging your config&quot;
 wbindkeys permissions --check          check wbindkeys can read your input devices
 sudo wbindkeys permissions --set       install the udev rule that grants that access
+wbindkeys service --install            start wbindkeys when you log in
+wbindkeys service --uninstall          stop that and remove the service
+wbindkeys man                          print the wbindkeys(1) man page
+wbindkeys man --install                install it next to the binary, see below
 wbindkeys --help                       show all options
 wbindkeys --version                    show the version</code></pre>
+<p><code>cargo install</code> only installs the binary, so the man page
+is built into it instead. <code>wbindkeys man --install</code> writes it
+to <code>../share/man/man1/</code> relative to the binary, i.e.
+<code>~/.cargo/share/man/man1/wbindkeys.1</code>. <code>man</code>
+searches there automatically for anything in <code>~/.cargo/bin</code>
+on your <code>PATH</code>, so <code>man wbindkeys</code> works with no
+<code>MANPATH</code> changes. <code>make install</code> does the same
+for <code>~/.local/bin</code>. The page's source is <a
+href="man/wbindkeys.1"><code>man/wbindkeys.1</code></a>, written by hand
+in mdoc; a test checks it mentions every subcommand and flag.</p>
 <h2 id="debugging-your-config">Debugging your config</h2>
 <p>Run with <code>--debug</code> (or <code>-d</code>) to print log
 output to stderr: which input devices were opened, the config path being

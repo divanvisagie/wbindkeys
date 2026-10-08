@@ -104,8 +104,10 @@ mandoc -T lint -W warning "$MAN_PAGE"
 echo "Converting $MAN_PAGE to HTML..."
 mandoc_temp=$(mktemp)
 TEMP_FILES+=("$mandoc_temp")
+# Keep everything from the header table up to (not including) the footer
+# table; the page body has nested <div>s, so it can't stop at the first </div>.
 mandoc -T html "$MAN_PAGE" | \
-    sed -n '/<table class="head">/,/<\/div>/p' > "$mandoc_temp"
+    awk '/<table class="head">/ { keep = 1 } /<table class="foot">/ { keep = 0 } keep' > "$mandoc_temp"
 
 # Apply template to man page
 apply_template "WBINDKEYS(1)" "$mandoc_temp" "$MANPAGE_HTML"

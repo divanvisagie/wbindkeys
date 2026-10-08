@@ -23,212 +23,270 @@
 <table class="head">
   <tr>
     <td class="head-ltitle">WBINDKEYS(1)</td>
-    <td class="head-vol">User Commands</td>
+    <td class="head-vol">General Commands Manual</td>
     <td class="head-rtitle">WBINDKEYS(1)</td>
   </tr>
 </table>
 <div class="manual-text">
 <section class="Sh">
 <h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
-<p class="Pp">wbindkeys - bind keys, mouse buttons and scroll events to commands
-    on Wayland</p>
-<p class="Pp"></p>
+<p class="Pp"><code class="Nm">wbindkeys</code> &#x2014; <span class="Nd">bind
+    keys, mouse buttons and scroll events to commands on Wayland</span></p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
-<p class="Pp"><b>wbindkeys</b> [-d]
-  <br/>
-  <b>wbindkeys permissions</b> --check | --set
-  <br/>
-  <b>wbindkeys</b> -h | -V</p>
-<p class="Pp"></p>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
+    <td>[<code class="Fl">-d</code>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
+    <td><code class="Cm">permissions</code> <code class="Fl">--check</code> |
+      <code class="Fl">--set</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
+    <td><code class="Cm">service</code> <code class="Fl">--install</code> |
+      <code class="Fl">--uninstall</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
+    <td><code class="Cm">man</code> [<code class="Fl">--install</code>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
+    <td><code class="Fl">-h</code> | <code class="Fl">-V</code></td>
+  </tr>
+</table>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
-<p class="Pp"><b>wbindkeys</b> runs shell commands when key combinations, mouse
-    buttons or scroll events are pressed. It is a Wayland replacement for
-    <b>xbindkeys</b>(1), configured with a Lua script.</p>
-<p class="Pp">Input is read directly from the input devices in <i>/dev/input</i>
-    through libinput rather than through the compositor, so it works the same
-    under any Wayland compositor. Because of this, the user running wbindkeys
-    needs read access to those devices; see <b>PERMISSIONS</b> below.</p>
-<p class="Pp">Run without a subcommand, wbindkeys loads its configuration and
-    keeps running, listening for input.</p>
-<p class="Pp"></p>
-</section>
-<section class="Sh">
-<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<p class="Pp"><code class="Nm">wbindkeys</code> runs shell commands when key
+    combinations, mouse buttons or scroll events are pressed. It is a Wayland
+    replacement for <a class="Xr">xbindkeys(1)</a>, configured with a Lua
+    script.</p>
+<p class="Pp">Input is read directly from the input devices in
+    <span class="Pa">/dev/input</span> through libinput rather than through the
+    compositor, so it works the same under any Wayland compositor. Because of
+    this, the user running <code class="Nm">wbindkeys</code> needs read access
+    to those devices; see <a class="Sx" href="#PERMISSIONS">PERMISSIONS</a>
+    below.</p>
+<p class="Pp">Run without a subcommand, <code class="Nm">wbindkeys</code> loads
+    its configuration and keeps running, listening for input.</p>
+<p class="Pp">The options are as follows:</p>
 <dl class="Bl-tag">
-  <dt id="d,"><a class="permalink" href="#d,"><b>-d, --debug</b></a></dt>
+  <dt id="d"><a class="permalink" href="#d"><code class="Fl">-d</code></a>,
+    <code class="Fl">--debug</code></dt>
   <dd>Print log output to stderr: which input devices were opened (or could not
       be opened), the configuration file being loaded, each registered binding
       and the key codes it maps to, unrecognised key names, every key press with
-      its combination, and whether it matched a binding.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="h,"><a class="permalink" href="#h,"><b>-h, --help</b></a></dt>
-  <dd>Print a summary of options and exit.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="V,"><a class="permalink" href="#V,"><b>-V, --version</b></a></dt>
-  <dd>Print the version and exit.
-    <p class="Pp"></p>
-  </dd>
+      its combination, and whether it matched a binding.</dd>
+  <dt id="h"><a class="permalink" href="#h"><code class="Fl">-h</code></a>,
+    <code class="Fl">--help</code></dt>
+  <dd>Print a summary of options and exit.</dd>
+  <dt id="V"><a class="permalink" href="#V"><code class="Fl">-V</code></a>,
+    <code class="Fl">--version</code></dt>
+  <dd>Print the version and exit.</dd>
 </dl>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="COMMANDS"><a class="permalink" href="#COMMANDS">COMMANDS</a></h1>
 <dl class="Bl-tag">
-  <dt id="permissions"><a class="permalink" href="#permissions"><b>permissions
-    --check</b></a></dt>
+  <dt id="permissions"><a class="permalink" href="#permissions"><code class="Cm">permissions</code></a>
+    <code class="Fl">--check</code></dt>
   <dd>Check that the udev rule is installed and that every input device can be
       read by the current user. Run it as your normal user, not as root. Lists
       any devices that cannot be read and exits with status 1 if anything is
-      wrong.
-    <p class="Pp"></p>
+      wrong.</dd>
+  <dt id="permissions~2"><a class="permalink" href="#permissions~2"><code class="Cm">permissions</code></a>
+    <code class="Fl">--set</code></dt>
+  <dd>Install the udev rule in
+      <span class="Pa">/etc/udev/rules.d/69-wbindkeys.rules</span>, reload udev
+      rules and re-trigger input devices so the current session gets access.
+      Must be run as root.</dd>
+  <dt id="service"><a class="permalink" href="#service"><code class="Cm">service</code></a>
+    <code class="Fl">--install</code></dt>
+  <dd>Install <code class="Nm">wbindkeys</code> as a service that starts when
+      you log in, using the service manager the system runs, then enable and
+      (re)start it. The service runs the binary this command was invoked as, so
+      run it again after moving the binary. Run it as your normal user, not as
+      root.
+    <p class="Pp">Only <a class="Xr">systemd(1)</a> on Linux is supported for
+        now, where this writes a user unit to
+        <span class="Pa">$XDG_CONFIG_HOME/systemd/user/wbindkeys.service</span>.
+        On other systems it prints that the system is not supported yet and
+        exits with status 1.</p>
   </dd>
-  <dt id="permissions~2"><a class="permalink" href="#permissions~2"><b>permissions
-    --set</b></a></dt>
-  <dd>Install the udev rule in <i>/etc/udev/rules.d/69-wbindkeys.rules</i>,
-      reload udev rules and re-trigger input devices so the current session gets
-      access. Must be run as root.
-    <p class="Pp"></p>
-  </dd>
+  <dt id="service~2"><a class="permalink" href="#service~2"><code class="Cm">service</code></a>
+    <code class="Fl">--uninstall</code></dt>
+  <dd>Stop and disable the service and remove what
+      <code class="Cm">service</code> <code class="Fl">--install</code> set
+    up.</dd>
+  <dt id="man"><a class="permalink" href="#man"><code class="Cm">man</code></a>
+    [<code class="Fl">--install</code>]</dt>
+  <dd>Print this manual page. With <code class="Fl">--install</code>, write it
+      to <span class="Pa">../share/man/man1/wbindkeys.1</span> relative to the
+      <code class="Nm">wbindkeys</code> binary instead, e.g.
+      <span class="Pa">~/.cargo/share/man/man1</span> after
+      <code class="Ic">cargo install</code> or
+      <span class="Pa">~/.local/share/man/man1</span> after
+      <code class="Ic">make install</code>. <a class="Xr">man(1)</a> looks there
+      automatically for programs in <span class="Pa">~/.cargo/bin</span> or
+      <span class="Pa">~/.local/bin</span> on your <code class="Ev">PATH</code>,
+      so no <code class="Ev">MANPATH</code> changes are needed.</dd>
 </dl>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="CONFIGURATION"><a class="permalink" href="#CONFIGURATION">CONFIGURATION</a></h1>
 <p class="Pp">The configuration is a Lua script. Bindings are created with the
-    <b>bind</b> function, which maps a key combination to a shell command:</p>
-<p class="Pp"></p>
+    <a class="permalink" href="#bind"><code class="Fn" id="bind">bind</code></a>()
+    function, which maps a key combination to a shell command:</p>
+<div class="Bd Pp Bd-indent Li">
 <pre>bind(&quot;ALT+T&quot;, &quot;alacritty&quot;)
 bind(&quot;MOD+Mouse4&quot;, &quot;wofi --show drun&quot;)
-bind(&quot;ALT+ScrollUp&quot;, &quot;pactl set-sink-volume @DEFAULT_SINK@ +5%&quot;)
-</pre>
-<p class="Pp">Commands are run with <b>sh</b>(1) and their output is
-  discarded.</p>
-<p class="Pp">Key names are case-insensitive and joined with <b>+</b>. The
-    available names are:</p>
-<p class="Pp"></p>
+bind(&quot;ALT+ScrollUp&quot;, &quot;pactl set-sink-volume @DEFAULT_SINK@ +5%&quot;)</pre>
+</div>
+<p class="Pp">Commands are run with <a class="Xr">sh(1)</a> and their output is
+    discarded.</p>
+<p class="Pp">Key names are case-insensitive and joined with &#x2018;+&#x2019;.
+    The available names are:</p>
 <dl class="Bl-tag">
-  <dt id="Modifiers"><a class="permalink" href="#Modifiers">Modifiers</a></dt>
-  <dd>ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the right-hand RIGHTALT,
-      RIGHTCTRL, RIGHTSHIFT, RIGHTMOD. ALT, CTRL, SHIFT and MOD refer to the
-      left-hand keys.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Letters,"><a class="permalink" href="#Letters,">Letters, numbers and
-    function keys</a></dt>
-  <dd>A to Z, 0 to 9, F1 to F12.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Navigation"><a class="permalink" href="#Navigation">Navigation</a></dt>
-  <dd>UP, DOWN, LEFT, RIGHT, HOME, END, PAGEUP, PAGEDOWN, INSERT, DELETE.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Other"><a class="permalink" href="#Other">Other keys</a></dt>
+  <dt>Modifiers</dt>
+  <dd>ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the one-sided LEFTALT,
+      LEFTCTRL, LEFTSHIFT, LEFTMOD, RIGHTALT, RIGHTCTRL, RIGHTSHIFT, RIGHTMOD.
+      ALT, CTRL, SHIFT and MOD match the key on either side of the keyboard; the
+      LEFT and RIGHT names match only that side. If a combination matches more
+      than one binding, the one-sided binding wins.</dd>
+  <dt>Letters, numbers and function keys</dt>
+  <dd>A to Z, 0 to 9, F1 to F12.</dd>
+  <dt>Navigation</dt>
+  <dd>UP, DOWN, LEFT, RIGHT, HOME, END, PAGEUP, PAGEDOWN, INSERT, DELETE.</dd>
+  <dt>Other keys</dt>
   <dd>ESCAPE, ENTER, BACKSPACE, TAB, BACKTICK, COMMA, PERIOD, SLASH, BACKSLASH,
-      SEMICOLON, QUOTE, DASH, EQUAL, LEFTSQUARE, RIGHTSQUARE.
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Mouse"><a class="permalink" href="#Mouse">Mouse</a></dt>
-  <dd>MOUSE1 to MOUSE10, SCROLLUP, SCROLLDOWN, SCROLLLEFT, SCROLLRIGHT.
-    <p class="Pp"></p>
-  </dd>
+      SEMICOLON, QUOTE, DASH, EQUAL, LEFTSQUARE, RIGHTSQUARE.</dd>
+  <dt>Mouse</dt>
+  <dd>MOUSE1 to MOUSE10, SCROLLUP, SCROLLDOWN, SCROLLLEFT, SCROLLRIGHT.</dd>
 </dl>
 <p class="Pp">When a binding has several modifiers they must be pressed in the
     order they are written. Unknown key names are ignored; run with
-    <b>--debug</b> to see them.</p>
-<p class="Pp"></p>
+    <code class="Fl">--debug</code> to see them.</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="PERMISSIONS"><a class="permalink" href="#PERMISSIONS">PERMISSIONS</a></h1>
-<p class="Pp">wbindkeys runs as a normal user and needs read access to
-    <i>/dev/input</i>. Running <b>sudo wbindkeys permissions --set</b> once
-    installs a udev rule that tags input devices with <b>uaccess</b>, so
-    <b>systemd-logind</b>(8) grants access to the user in the active local
-    session. Check access with <b>wbindkeys permissions --check</b>.</p>
-<p class="Pp">If devices are still not readable, re-run <b>permissions
-    --set</b>, or log out and back in. Access is only granted to the session at
-    the physical seat, so it does not work over SSH.</p>
-<p class="Pp"></p>
+<p class="Pp"><code class="Nm">wbindkeys</code> runs as a normal user and needs
+    read access to <span class="Pa">/dev/input</span>. Running
+    <code class="Ic">sudo wbindkeys permissions --set</code> once installs a
+    udev rule that tags input devices with <code class="Cm">uaccess</code>, so
+    <a class="Xr">systemd-logind(8)</a> grants access to the user in the active
+    local session. Check access with <code class="Ic">wbindkeys permissions
+    --check</code>.</p>
+<p class="Pp">If devices are still not readable, re-run
+    <code class="Cm">permissions</code> <code class="Fl">--set</code>, or log
+    out and back in. Access is only granted to the session at the physical seat,
+    so it does not work over SSH.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="XDG_CONFIG_HOME"><a class="permalink" href="#XDG_CONFIG_HOME"><code class="Ev">XDG_CONFIG_HOME</code></a></dt>
+  <dd>Directory the configuration file is read from; see
+      <a class="Sx" href="#FILES">FILES</a>.</dd>
+</dl>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="FILES"><a class="permalink" href="#FILES">FILES</a></h1>
 <dl class="Bl-tag">
-  <dt><i>$XDG_CONFIG_HOME/wbindkeys/init.lua</i></dt>
-  <dd>Configuration file. Defaults to <i>~/.config/wbindkeys/init.lua</i> when
-      <b>XDG_CONFIG_HOME</b> is not set. wbindkeys exits with an error if it
-      does not exist.
-    <p class="Pp"></p>
-  </dd>
-  <dt><i>/etc/udev/rules.d/69-wbindkeys.rules</i></dt>
-  <dd>udev rule installed by <b>permissions --set</b>.
-    <p class="Pp"></p>
-  </dd>
-  <dt><i>~/.config/systemd/user/wbindkeys.service</i></dt>
-  <dd>systemd user service created by <b>make install</b>.
-    <p class="Pp"></p>
-  </dd>
+  <dt><span class="Pa">$XDG_CONFIG_HOME/wbindkeys/init.lua</span></dt>
+  <dd>Configuration file. Defaults to
+      <span class="Pa">~/.config/wbindkeys/init.lua</span> when
+      <code class="Ev">XDG_CONFIG_HOME</code> is not set.
+      <code class="Nm">wbindkeys</code> exits with an error if it does not
+      exist.</dd>
+  <dt><span class="Pa">/etc/udev/rules.d/69-wbindkeys.rules</span></dt>
+  <dd>udev rule installed by <code class="Cm">permissions</code>
+      <code class="Fl">--set</code>.</dd>
+  <dt><span class="Pa">$XDG_CONFIG_HOME/systemd/user/wbindkeys.service</span></dt>
+  <dd>systemd user unit written by <code class="Cm">service</code>
+      <code class="Fl">--install</code> on Linux.</dd>
 </dl>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="EXIT_STATUS"><a class="permalink" href="#EXIT_STATUS">EXIT
   STATUS</a></h1>
 <dl class="Bl-tag">
-  <dt><b>0</b></dt>
-  <dd>Success, or <b>permissions --check</b> found no problems.</dd>
-  <dt><b>1</b></dt>
-  <dd><b>permissions --check</b> found a problem, or <b>permissions --set</b>
-      failed.</dd>
-  <dt><b>2</b></dt>
-  <dd>Invalid command line arguments.
-    <p class="Pp"></p>
-  </dd>
+  <dt>0</dt>
+  <dd>Success, or <code class="Cm">permissions</code>
+      <code class="Fl">--check</code> found no problems.</dd>
+  <dt id="permissions~3">1</dt>
+  <dd><a class="permalink" href="#permissions~3"><code class="Cm">permissions</code></a>
+      <code class="Fl">--check</code> found a problem,
+      <code class="Cm">permissions</code> <code class="Fl">--set</code> failed,
+      <code class="Cm">service</code> failed or is not supported on this system,
+      or <code class="Cm">man</code> <code class="Fl">--install</code> could not
+      write the page.</dd>
+  <dt>2</dt>
+  <dd>Invalid command line arguments.</dd>
 </dl>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
-<dl class="Bl-tag">
-  <dt id="Debug"><a class="permalink" href="#Debug">Debug a configuration (stop
-    the service first so it doesn't also react):</a></dt>
-  <dd>
-    <pre>systemctl --user stop wbindkeys.service
-wbindkeys --debug
-    </pre>
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Grant"><a class="permalink" href="#Grant">Grant access to input
-    devices when wbindkeys is in <i>~/.local/bin</i>:</a></dt>
-  <dd>
-    <pre>sudo ~/.local/bin/wbindkeys permissions --set
-    </pre>
-    <p class="Pp"></p>
-  </dd>
-  <dt id="Check"><a class="permalink" href="#Check">Check access:</a></dt>
-  <dd>
-    <pre>wbindkeys permissions --check
-    </pre>
-    <p class="Pp"></p>
-  </dd>
-</dl>
+<p class="Pp">Debug a configuration (stop the service first so it doesn't also
+    react):</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>systemctl --user stop wbindkeys.service
+wbindkeys --debug</pre>
+</div>
+<p class="Pp">Grant access to input devices when
+    <code class="Nm">wbindkeys</code> is in
+    <span class="Pa">~/.local/bin</span>:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>sudo ~/.local/bin/wbindkeys permissions --set</pre>
+</div>
+<p class="Pp">Check access:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>wbindkeys permissions --check</pre>
+</div>
+<p class="Pp">Start <code class="Nm">wbindkeys</code> automatically when you log
+    in:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>wbindkeys service --install</pre>
+</div>
+<p class="Pp">Install this manual page after <code class="Ic">cargo install
+    wbindkeys</code>:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>wbindkeys man --install
+man wbindkeys</pre>
+</div>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
-<p class="Pp"><b>xbindkeys</b>(1), <b>libinput</b>(4), <b>udev</b>(7),
-    <b>systemd-logind</b>(8)</p>
-<p class="Pp"></p>
+<p class="Pp"><a class="Xr">xbindkeys(1)</a>, <a class="Xr">libinput(4)</a>,
+    <a class="Xr">systemd.unit(5)</a>, <a class="Xr">udev(7)</a>,
+    <a class="Xr">systemd-logind(8)</a></p>
 </section>
 <section class="Sh">
-<h1 class="Sh" id="AUTHOR"><a class="permalink" href="#AUTHOR">AUTHOR</a></h1>
-<p class="Pp">Divan Visagie &lt;me@divanv.com&gt;</p>
-<p class="Pp"></p>
+<h1 class="Sh" id="AUTHORS"><a class="permalink" href="#AUTHORS">AUTHORS</a></h1>
+<p class="Pp"><span class="An">Divan Visagie</span>
+    &lt;<a class="Mt" href="mailto:me@divanv.com">me@divanv.com</a>&gt;</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
 <p class="Pp">Report bugs at
-  https://github.com/divanvisagie/wbindkeys/issues</p>
+    <a class="Lk" href="https://github.com/divanvisagie/wbindkeys/issues">https://github.com/divanvisagie/wbindkeys/issues</a></p>
 </section>
 </div>
 </body>

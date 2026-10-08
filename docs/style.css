@@ -325,3 +325,13 @@ dl dd {
         color: #b3b3b3;
     }
 }
+
+/* Man page: mdoc wraps names, flags and commands in <code>, so show them as
+   bold monospace in running text, like man(1) does, rather than as boxes */
+.manual-text code {
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+    font-weight: bold;
+}
