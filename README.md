@@ -34,6 +34,7 @@ On other distributions install the equivalent packages with your package manager
 ```sh
 cargo install wbindkeys
 sudo ~/.cargo/bin/wbindkeys permissions --set
+wbindkeys man --install    # optional, so `man wbindkeys` works
 ```
 
 Then create a [config](#config) and run `wbindkeys`. To start it automatically when you log in, add a systemd user service at `~/.config/systemd/user/wbindkeys.service`:
@@ -60,7 +61,7 @@ make permissions    # grants access to input devices, see Permissions
 make install
 ```
 
-`make install` builds the release binary, copies it to `~/.local/bin`, and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
+`make install` builds the release binary, copies it to `~/.local/bin` (with the man page in `~/.local/share/man/man1`), and installs + starts a systemd user service (`wbindkeys.service`) that runs it.
 
 ## Permissions
 
@@ -141,9 +142,13 @@ wbindkeys                              run wbindkeys (this is what the service d
 wbindkeys --debug                      run with log output, see "Debugging your config"
 wbindkeys permissions --check          check wbindkeys can read your input devices
 sudo wbindkeys permissions --set       install the udev rule that grants that access
+wbindkeys man                          print the wbindkeys(1) man page
+wbindkeys man --install                install it next to the binary, see below
 wbindkeys --help                       show all options
 wbindkeys --version                    show the version
 ```
+
+`cargo install` only installs the binary, so the man page is built into it instead. `wbindkeys man --install` writes it to `../share/man/man1/` relative to the binary, i.e. `~/.cargo/share/man/man1/wbindkeys.1`. `man` searches there automatically for anything in `~/.cargo/bin` on your `PATH`, so `man wbindkeys` works with no `MANPATH` changes. `make install` does the same for `~/.local/bin`. The page's source is [`man/wbindkeys.1`](man/wbindkeys.1), written by hand in mdoc; a test checks it mentions every subcommand and flag.
 
 ## Debugging your config
 

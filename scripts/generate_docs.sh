@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script to generate HTML documentation from wbindkeys.1 man page and README
+# Script to generate HTML documentation from the man/wbindkeys.1 man page and README
 # Uses HTML templates for consistent document structure
 
 set -e
 
-MAN_PAGE="wbindkeys.1"
+MAN_PAGE="man/wbindkeys.1"
 README_MD="README.md"
 LICENSE_TXT="LICENSE"
 DOCS_DIR="docs"
@@ -99,6 +99,8 @@ apply_template() {
 }
 
 # Generate man page HTML content (without full HTML structure)
+echo "Linting $MAN_PAGE..."
+mandoc -T lint -W warning "$MAN_PAGE"
 echo "Converting $MAN_PAGE to HTML..."
 mandoc_temp=$(mktemp)
 TEMP_FILES+=("$mandoc_temp")

@@ -54,8 +54,9 @@ install: build-release ## Install to ~/.local/bin and start the user service
 	./scripts/install.sh
 
 # Regenerates the documentation website in docs/ (served by GitHub Pages)
-# from README.md, wbindkeys.1 and LICENSE. Needs pandoc and mandoc.
-docs: README.md wbindkeys.1 LICENSE templates/document.html templates/nav.html ## Regenerate the docs site in docs/
+# from README.md, man/wbindkeys.1 and LICENSE, after linting the man page
+# with mandoc. Needs pandoc and mandoc.
+docs: README.md man/wbindkeys.1 LICENSE templates/document.html templates/nav.html ## Regenerate the docs site in docs/
 	./scripts/generate_docs.sh
 
 # Builds the crate exactly as it would be uploaded to crates.io, without

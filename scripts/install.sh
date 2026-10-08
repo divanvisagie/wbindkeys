@@ -15,6 +15,10 @@ cp target/release/wbindkeys "$BIN_DEST"
 chmod +x "$BIN_DEST"
 echo "Installed wbindkeys to $BIN_DEST"
 
+# Install the man page to ~/.local/share/man/man1, where man finds it for
+# binaries in ~/.local/bin without any MANPATH changes
+"$BIN_DEST" man --install
+
 # Create a systemd service
 mkdir -p "$(dirname "$SERVICE_DEST")"
 cat <<EOL > "$SERVICE_DEST"

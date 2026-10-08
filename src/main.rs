@@ -9,6 +9,7 @@ use parser::Keys;
 use script_manager::ScriptManager;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
+use std::io::Write;
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -96,7 +97,16 @@ struct Args {
 enum Commands {
     /// Check or set up permission to read input devices
     Permissions(PermissionsArgs),
+    /// Print the wbindkeys(1) manual page
+    Man {
+        /// Write it under ../share/man/man1 next to the wbindkeys binary
+        /// (e.g. ~/.cargo/share/man/man1 after `cargo install`) instead
+        #[arg(long)]
+        install: bool,
+    },
 }
+
+const MAN_PAGE: &str = include_str!("../man/wbindkeys.1");
 
 #[derive(ClapArgs)]
 #[group(required = true, multiple = false)]
@@ -110,17 +120,50 @@ struct PermissionsArgs {
     set: bool,
 }
 
+fn man(install: bool) -> Result<(), String> {
+    if !install {
+        std::io::stdout().write_all(MAN_PAGE.as_bytes()).map_err(|err| err.to_string())?;
+        return Ok(());
+    }
+
+    let exe = std::env::current_exe().map_err(|err| format!("locating the wbindkeys binary: {}", err))?;
+    let prefix = exe
+        .parent()
+        .and_then(|bin| bin.parent())
+        .ok_or("the wbindkeys binary has no parent directory to install under")?;
+    let dir = prefix.join("share/man/man1");
+    let path = dir.join("wbindkeys.1");
+    std::fs::create_dir_all(&dir)
+        .and_then(|()| std::fs::write(&path, MAN_PAGE))
+        .map_err(|err| {
+            format!(
+                "writing {}: {} (run `wbindkeys man > <path>` to put it somewhere else)",
+                path.display(),
+                err
+            )
+        })?;
+    println!("installed {}", path.display());
+    Ok(())
+}
+
 fn main() {
     let args = Args::parse();
     DEBUG.store(args.debug, Ordering::Relaxed);
 
-    if let Some(Commands::Permissions(perms)) = args.command {
-        let ok = if perms.set {
-            permissions::set().map_err(|err| eprintln!("error: {}", err)).is_ok()
-        } else {
-            permissions::check()
-        };
-        std::process::exit(if ok { 0 } else { 1 });
+    match args.command {
+        Some(Commands::Permissions(perms)) => {
+            let ok = if perms.set {
+                permissions::set().map_err(|err| eprintln!("error: {}", err)).is_ok()
+            } else {
+                permissions::check()
+            };
+            std::process::exit(if ok { 0 } else { 1 });
+        }
+        Some(Commands::Man { install }) => {
+            let ok = man(install).map_err(|err| eprintln!("error: {}", err)).is_ok();
+            std::process::exit(if ok { 0 } else { 1 });
+        }
+        None => {}
     }
 
     let mut input = Libinput::new_with_udev(WBindKeysInterface);
@@ -274,5 +317,35 @@ fn scroll_dir_to_key(dir: ScrollDir) -> u32 {
         ScrollDir::Down => 0x999,
         ScrollDir::Left => 0x996,
         ScrollDir::Right => 0x997,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// The man page is written by hand, so make sure it keeps up with the
+    /// CLI: every subcommand and long flag needs at least a mention.
+    #[test]
+    fn man_page_covers_cli() {
+        fn check(cmd: &clap::Command, missing: &mut Vec<String>) {
+            for arg in cmd.get_arguments() {
+                // mdoc writes `--flag` as `Fl -flag`.
+                if let Some(long) = arg.get_long().filter(|long| !MAN_PAGE.contains(&format!("Fl -{long}"))) {
+                    missing.push(format!("--{long}"));
+                }
+            }
+            for sub in cmd.get_subcommands() {
+                if sub.get_name() != "help" && !MAN_PAGE.contains(&format!("Cm {}", sub.get_name())) {
+                    missing.push(sub.get_name().to_string());
+                }
+                check(sub, missing);
+            }
+        }
+
+        let mut missing = Vec::new();
+        check(&Args::command(), &mut missing);
+        assert!(missing.is_empty(), "not documented in man/wbindkeys.1: {}", missing.join(", "));
     }
 }
