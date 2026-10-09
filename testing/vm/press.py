@@ -36,6 +36,8 @@ CASES = [
     ("Alt+Ctrl+T (out of order)", [e.KEY_LEFTALT, e.KEY_LEFTCTRL, e.KEY_T], set()),
     ("RightCtrl alone", [e.KEY_RIGHTCTRL], {"rightctrl"}),
     ("Shift+Alt", [e.KEY_LEFTSHIFT, e.KEY_LEFTALT], {"shift-alt"}),
+    ("Super tapped alone", [e.KEY_LEFTMETA], {"mod-tap"}),
+    ("Alt+1 (on release)", [e.KEY_LEFTALT, e.KEY_1], {"alt-1-release"}),
 ]
 
 

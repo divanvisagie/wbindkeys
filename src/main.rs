@@ -1,6 +1,5 @@
 use clap::{Args as ClapArgs, Parser, Subcommand};
 use dirs::config_dir;
-use input::event::keyboard::KeyState;
 use input::{Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
 use script_manager::ScriptManager;
@@ -215,8 +214,10 @@ fn main() {
         input.dispatch().unwrap();
 
         for event in &mut input {
-            if let Some(combo) = tracker.handle(&event, Instant::now()).and_then(|observed| observed.combo) {
-                script_manager.handle_action(combo, KeyState::Pressed);
+            if let Some(observed) = tracker.handle(&event, Instant::now()) {
+                for fired in script_manager.handle(&observed).fired {
+                    fired.run();
+                }
             }
         }
         tracker.expire_scrolls(Instant::now());

@@ -61,6 +61,14 @@
 <table class="Nm">
   <tr>
     <td><code class="Nm">wbindkeys</code></td>
+    <td><code class="Cm">record</code> [<code class="Fl">-o</code>
+      <var class="Ar">file</var>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">wbindkeys</code></td>
     <td><code class="Cm">man</code> [<code class="Fl">--install</code>]</td>
   </tr>
 </table>
@@ -135,6 +143,23 @@
   <dd>Stop and disable the service and remove what
       <code class="Cm">service</code> <code class="Fl">--install</code> set
     up.</dd>
+  <dt id="record"><a class="permalink" href="#record"><code class="Cm">record</code></a>
+    [<code class="Fl">-o</code> <var class="Ar">file</var>]</dt>
+  <dd>Record every key press, mouse button and scroll that
+      <code class="Nm">wbindkeys</code> sees, what it made of each one and which
+      binding it would run, until
+      <a class="permalink" href="#Ctrl+C"><b class="Sy" id="Ctrl+C">Ctrl+C</b></a>.
+      Use it when a key combination doesn't do what you expect, and attach the
+      file to a bug report.
+    <p class="Pp">The recording is written to
+        <span class="Pa">wbindkeys-recording.txt</span>, or to the file given
+        with <code class="Fl">-o</code>, <code class="Fl">--output</code>. It
+        starts with the <code class="Nm">wbindkeys</code> version, the system,
+        the desktop, the keyboard layout settings, the input devices and the
+        bindings in your configuration (without their commands), followed by one
+        line per event. Everything typed while recording is saved, so don't type
+        passwords.</p>
+  </dd>
   <dt id="man"><a class="permalink" href="#man"><code class="Cm">man</code></a>
     [<code class="Fl">--install</code>]</dt>
   <dd>Print this manual page. With <code class="Fl">--install</code>, write it
@@ -161,6 +186,27 @@ bind(&quot;ALT+ScrollUp&quot;, &quot;pactl set-sink-volume @DEFAULT_SINK@ +5%&qu
 </div>
 <p class="Pp">Commands are run with <a class="Xr">sh(1)</a> and their output is
     discarded.</p>
+<p class="Pp">A binding runs as soon as its combination is pressed. An optional
+    third argument changes when it runs:</p>
+<dl class="Bl-tag">
+  <dt id="_"><a class="permalink" href="#_"><code class="Li">{ on =
+    &quot;release&quot; }</code></a></dt>
+  <dd>Run once every key of the combination has been released, provided no other
+      key was pressed in between. Use it for commands that send key presses of
+      their own, such as <a class="Xr">ydotool(1)</a>, so the keys still held
+      for the combination aren't added to them, or to bind a modifier tapped on
+      its own without running it for every combination that uses that
+    modifier.</dd>
+  <dt id="_~2"><a class="permalink" href="#_~2"><code class="Li">{ on =
+    &quot;press&quot; }</code></a></dt>
+  <dd>Run as soon as the combination is pressed; the default.</dd>
+</dl>
+<p class="Pp">A combination can have both a press and a release binding. For
+    example:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>bind(&quot;ALT+1&quot;, &quot;ydotool key 125:1 2:1 2:0 125:0&quot;, { on = &quot;release&quot; })
+bind(&quot;MOD&quot;, &quot;wofi --show drun&quot;, { on = &quot;release&quot; })</pre>
+</div>
 <p class="Pp">Key names are case-insensitive and joined with &#x2018;+&#x2019;.
     The available names are:</p>
 <dl class="Bl-tag">
@@ -263,6 +309,11 @@ wbindkeys --debug</pre>
     in:</p>
 <div class="Bd Pp Bd-indent Li">
 <pre>wbindkeys service --install</pre>
+</div>
+<p class="Pp">Record what happens when a key combination doesn't work, to attach
+    to a bug report:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>wbindkeys record</pre>
 </div>
 <p class="Pp">Install this manual page after <code class="Ic">cargo install
     wbindkeys</code>:</p>

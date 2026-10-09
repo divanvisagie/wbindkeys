@@ -12,6 +12,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::parser::Keys;
+use crate::script_manager::Outcome;
 use crate::tracker::{Observed, Tracker};
 
 const ISSUES_URL: &str = "https://github.com/divanvisagie/wbindkeys/issues";
@@ -68,8 +69,9 @@ pub fn record(output: &Path) -> Result<(), String> {
     let script_manager = match crate::load_config(&config_path) {
         Ok(script_manager) => {
             recording.line(&format!("# config: {}", config_path.display()))?;
-            for (name, keys) in script_manager.bindings() {
-                recording.line(&format!("# binding {} => {}", name, format_choices(&keys)))?;
+            for (name, keys, on_release) in script_manager.bindings() {
+                let trigger = if on_release { " on release" } else { "" };
+                recording.line(&format!("# binding {}{} => {}", name, trigger, format_choices(&keys)))?;
             }
             Some(script_manager)
         }
@@ -117,14 +119,13 @@ pub fn record(output: &Path) -> Result<(), String> {
             };
             let time_usec = event_time_usec(&event).unwrap_or(0);
             let start = *start_usec.get_or_insert(time_usec);
-            let binding = observed.combo.as_ref().map(|combo| {
-                script_manager
-                    .as_ref()
-                    .and_then(|script_manager| script_manager.matching_binding(combo))
-                    .unwrap_or_else(|| "none".to_string())
-            });
+            let pressed = observed.combo.is_some();
+            let binding = match &script_manager {
+                Some(script_manager) => describe_outcome(&script_manager.handle(&observed), pressed),
+                None => describe_outcome(&Outcome { fired: Vec::new(), waiting: None }, pressed),
+            };
             let seconds = time_usec.saturating_sub(start) as f64 / 1_000_000.0;
-            recording.event(&format_event(seconds, event.device().sysname(), &observed, binding.as_deref()))?;
+            recording.event(&format_event(seconds, event.device().sysname(), &observed, &binding))?;
             events += 1;
         }
         tracker.expire_scrolls(Instant::now());
@@ -141,8 +142,23 @@ pub fn record(output: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// The bindings an event ran, e.g. "ALT+E", or "ALT+1 on release, waiting"
+/// when a release binding's combo was pressed. "none" for a press that ran
+/// nothing, "-" for a release that ran nothing.
+fn describe_outcome(outcome: &Outcome, pressed: bool) -> String {
+    let mut parts: Vec<String> = outcome.fired.iter().map(|fired| fired.name.clone()).collect();
+    if let Some(waiting) = &outcome.waiting {
+        parts.push(format!("{} on release, waiting", waiting));
+    }
+    match (parts.is_empty(), pressed) {
+        (false, _) => parts.join(", "),
+        (true, true) => "none".to_string(),
+        (true, false) => "-".to_string(),
+    }
+}
+
 /// One recorded event, in columns under the header written by `record`.
-fn format_event(seconds: f64, device: &str, observed: &Observed, binding: Option<&str>) -> String {
+fn format_event(seconds: f64, device: &str, observed: &Observed, binding: &str) -> String {
     let state = match observed.state {
         KeyState::Pressed => "pressed",
         KeyState::Released => "released",
@@ -159,7 +175,7 @@ fn format_event(seconds: f64, device: &str, observed: &Observed, binding: Option
         key_name(observed.key),
         state,
         combo,
-        binding.unwrap_or("-")
+        binding
     )
 }
 
@@ -258,13 +274,13 @@ mod tests {
             combo: Some(vec![Keys::LeftMod as u32, Keys::Num8 as u32]),
         };
         assert_eq!(
-            format_event(1.5, "event3", &pressed, Some("MOD+8")),
+            format_event(1.5, "event3", &pressed, "MOD+8"),
             "     1.500  event3       9  KEY_8              pressed   [125,9]              MOD+8"
         );
 
         let released = Observed { key: Keys::LeftMod as u32, state: KeyState::Released, combo: None };
         assert_eq!(
-            format_event(1.75, "event3", &released, None),
+            format_event(1.75, "event3", &released, "-"),
             "     1.750  event3     125  KEY_LEFTMETA       released  -                    -"
         );
     }

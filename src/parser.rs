@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub enum Keys {
     A = 0x1E,
     B = 0x30,

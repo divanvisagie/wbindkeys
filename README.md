@@ -109,6 +109,17 @@ bind("MOD+Mouse4", "wofi --show drun")
 bind("ALT+ScrollUp", "pactl set-sink-volume @DEFAULT_SINK@ +5%")
 ```
 
+A binding runs as soon as its combo is pressed. Pass `{ on = "release" }` to run it once every key of the combo has been let go instead. It doesn't run if another key is pressed in between:
+
+```lua
+-- Send Super+1 with ydotool. On release, so the Alt you're holding isn't
+-- added to it and turned into Alt+Super+1.
+bind("ALT+1", "ydotool key 125:1 2:1 2:0 125:0", { on = "release" })
+-- Open the launcher by tapping Super on its own, without running it for
+-- every Super+key combo
+bind("MOD", "wofi --show drun", { on = "release" })
+```
+
 After changing the config, restart the service: `systemctl --user restart wbindkeys.service`.
 
 ### Key names

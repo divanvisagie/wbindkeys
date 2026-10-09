@@ -25,3 +25,8 @@ bind("CTRL+ALT+T", mark("ctrl-alt-t"))
 -- Combos that are only modifiers
 bind("RIGHTCTRL", mark("rightctrl"))
 bind("SHIFT+ALT", mark("shift-alt"))
+
+-- Release bindings run once the combo's keys are let go. Tapping Super on
+-- its own runs MOD, but the Super+key cases above must not.
+bind("MOD", mark("mod-tap"), { on = "release" })
+bind("ALT+1", mark("alt-1-release"), { on = "release" })

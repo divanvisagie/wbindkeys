@@ -139,6 +139,17 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb8-1"><a href="#c
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Mouse buttons and the scroll wheel can be bound too</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;MOD+Mouse4&quot;</span><span class="op">,</span> <span class="st">&quot;wofi --show drun&quot;</span><span class="op">)</span></span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+ScrollUp&quot;</span><span class="op">,</span> <span class="st">&quot;pactl set-sink-volume @DEFAULT_SINK@ +5%&quot;</span><span class="op">)</span></span></code></pre></div>
+<p>A binding runs as soon as its combo is pressed. Pass
+<code>{ on = "release" }</code> to run it once every key of the combo
+has been let go instead. It doesn't run if another key is pressed in
+between:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Send Super+1 with ydotool. On release, so the Alt you&#39;re holding isn&#39;t</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- added to it and turned into Alt+Super+1.</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;ALT+1&quot;</span><span class="op">,</span> <span class="st">&quot;ydotool key 125:1 2:1 2:0 125:0&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="va">on</span> <span class="op">=</span> <span class="st">&quot;release&quot;</span> <span class="op">})</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Open the launcher by tapping Super on its own, without running it for</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- every Super+key combo</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>bind<span class="op">(</span><span class="st">&quot;MOD&quot;</span><span class="op">,</span> <span class="st">&quot;wofi --show drun&quot;</span><span class="op">,</span> <span class="op">{</span> <span class="va">on</span> <span class="op">=</span> <span class="st">&quot;release&quot;</span> <span class="op">})</span></span></code></pre></div>
 <p>After changing the config, restart the service:
 <code>systemctl --user restart wbindkeys.service</code>.</p>
 <h3 id="key-names">Key names</h3>
@@ -210,6 +221,7 @@ wbindkeys permissions --check          check wbindkeys can read your input devic
 sudo wbindkeys permissions --set       install the udev rule that grants that access
 wbindkeys service --install            start wbindkeys when you log in
 wbindkeys service --uninstall          stop that and remove the service
+wbindkeys record                       record key presses for a bug report, see below
 wbindkeys man                          print the wbindkeys(1) man page
 wbindkeys man --install                install it next to the binary, see below
 wbindkeys --help                       show all options
@@ -230,19 +242,33 @@ output to stderr: which input devices were opened, the config path being
 loaded, each registered binding and the key codes it maps to, any
 unrecognised key names, every key press with its combo, and whether a
 combo matched a binding.</p>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode sh"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> stop wbindkeys.service</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> <span class="at">--debug</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> stop wbindkeys.service</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> <span class="at">--debug</span></span></code></pre></div>
 <p>If the output shows
 <code>Failed to open input device ... Permission denied</code>, or key
 presses don't show up at all, see <a
 href="#permissions">Permissions</a>.</p>
+<h2 id="reporting-a-key-combination-that-doesnt-work">Reporting a key
+combination that doesn't work</h2>
+<p>If a binding doesn't fire, record what wbindkeys sees while you press
+it:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> record</span></code></pre></div>
+<p>Press the combination, then Ctrl+C. This saves
+<code>wbindkeys-recording.txt</code> (use <code>-o</code> to pick
+another file), with each key press, what wbindkeys made of it and which
+binding it would run, plus your wbindkeys version, system, keyboard
+layout, input devices and bindings (but not their commands). <a
+href="https://github.com/divanvisagie/wbindkeys/issues">Open an
+issue</a> and attach the file. Everything you type while recording is
+saved, so don't type passwords.</p>
 <h2 id="development-setup">Development setup</h2>
-<div class="sourceCode" id="cb11"><pre
-class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build-debug    <span class="co"># or `make build-release`; run `make` to list all targets</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> test</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build-debug    <span class="co"># or `make build-release`; run `make` to list all targets</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> test</span></code></pre></div>
 <p>To try your changes:</p>
 <ul>
 <li><code>make run</code> builds and runs wbindkeys against your normal
@@ -257,5 +283,11 @@ from that file.</li>
 <p>Stop the service first
 (<code>systemctl --user stop wbindkeys.service</code>) so the installed
 copy doesn't also react to your key presses.</p>
+<p><code>make e2e</code> runs an end-to-end test without touching your
+session: it starts wbindkeys in an LXD virtual machine (created on the
+first run), presses key combos on a virtual keyboard there and checks
+which bindings fire. It needs <a
+href="https://canonical.com/lxd">LXD</a> with virtual machine support;
+see <code>testing/vm/e2e.sh</code> for options.</p>
 </body>
 </html>

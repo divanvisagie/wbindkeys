@@ -148,6 +148,28 @@ Commands are run with
 .Xr sh 1
 and their output is discarded.
 .Pp
+A binding runs as soon as its combination is pressed.
+An optional third argument changes when it runs:
+.Bl -tag -width Ds
+.It Li { on = \(dqrelease\(dq }
+Run once every key of the combination has been released, provided no other
+key was pressed in between.
+Use it for commands that send key presses of their own, such as
+.Xr ydotool 1 ,
+so the keys still held for the combination aren't added to them, or to bind
+a modifier tapped on its own without running it for every combination that
+uses that modifier.
+.It Li { on = \(dqpress\(dq }
+Run as soon as the combination is pressed; the default.
+.El
+.Pp
+A combination can have both a press and a release binding.
+For example:
+.Bd -literal -offset indent
+bind("ALT+1", "ydotool key 125:1 2:1 2:0 125:0", { on = "release" })
+bind("MOD", "wofi --show drun", { on = "release" })
+.Ed
+.Pp
 Key names are case-insensitive and joined with
 .Sq + .
 The available names are:
