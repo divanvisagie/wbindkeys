@@ -16,7 +16,7 @@ all: build-release ## Build the release binary
 builddep: ## Install Rust and build dependencies (Debian/Ubuntu)
 	command -v rustc >/dev/null 2>&1 || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 	sudo apt-get update
-	sudo apt-get install -y pkg-config libevdev-dev libudev-dev libinput-dev
+	sudo apt-get install -y pkg-config libevdev-dev libudev-dev libinput-dev libxkbcommon-dev
 
 # Installs the udev rule that lets wbindkeys read input devices as your user
 # and re-triggers udev so existing devices get access. Safe to re-run, e.g.

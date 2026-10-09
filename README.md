@@ -21,10 +21,10 @@ wbindkeys reads input directly from your input devices through libinput rather t
 
 ## Installation and setup
 
-wbindkeys needs the libinput, libudev and libevdev development packages to build. On Debian/Ubuntu:
+wbindkeys needs the libinput, libudev, libevdev and libxkbcommon development packages to build. On Debian/Ubuntu:
 
 ```sh
-sudo apt-get install pkg-config libevdev-dev libudev-dev libinput-dev
+sudo apt-get install pkg-config libevdev-dev libudev-dev libinput-dev libxkbcommon-dev
 ```
 
 On other distributions install the equivalent packages with your package manager.
@@ -124,19 +124,32 @@ After changing the config, restart the service: `systemctl --user restart wbindk
 
 ### Key names
 
-Key names are case-insensitive and joined with `+`.
+Key names are case-insensitive and joined with `+`. They follow your keyboard layout: a binding means the keys you see labelled with it, so on a French AZERTY keyboard `ALT+A` is the key labelled A, and `MOD+&` and `MOD+_` are the keys labelled `&` and `_`.
 
 | Kind | Names |
 |---|---|
-| Modifiers | `ALT`, `CTRL`, `SHIFT`, `MOD` (the Super/Windows key), `SPACE` |
+| Characters | Any character your layout can type: `A`–`Z`, `0`–`9`, `&`, `_`, `@`, `é`, … Use `PLUS` for `+`, since it separates keys |
+| Modifiers | `ALT`, `CTRL`, `SHIFT`, `MOD` (the Super/Windows key), `ALTGR`, `SPACE` |
 | One-sided modifiers | `LEFTALT`, `LEFTCTRL`, `LEFTSHIFT`, `LEFTMOD`, `RIGHTALT`, `RIGHTCTRL`, `RIGHTSHIFT`, `RIGHTMOD` |
-| Letters and numbers | `A`–`Z`, `0`–`9` |
 | Function keys | `F1`–`F12` |
 | Navigation | `UP`, `DOWN`, `LEFT`, `RIGHT`, `HOME`, `END`, `PAGEUP`, `PAGEDOWN`, `INSERT`, `DELETE` |
-| Other keys | `ESCAPE`, `ENTER`, `BACKSPACE`, `TAB`, `BACKTICK`, `COMMA`, `PERIOD`, `SLASH`, `BACKSLASH`, `SEMICOLON`, `QUOTE`, `DASH`, `EQUAL`, `LEFTSQUARE`, `RIGHTSQUARE` |
+| Other keys | `ESCAPE`, `ENTER`, `BACKSPACE`, `TAB`, `BACKTICK`, `COMMA`, `PERIOD`, `SLASH`, `BACKSLASH`, `SEMICOLON`, `QUOTE`, `DASH`, `EQUAL`, `LEFTSQUARE`, `RIGHTSQUARE`, and any [xkb keysym name](https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h), like `XF86AudioMute` |
 | Mouse | `MOUSE1`–`MOUSE10`, `SCROLLUP`, `SCROLLDOWN`, `SCROLLLEFT`, `SCROLLRIGHT` |
 
-`ALT`, `CTRL`, `SHIFT` and `MOD` match the key on either side of the keyboard; use the `LEFT…` and `RIGHT…` names to bind only one side. If a combo matches more than one binding, the one-sided binding wins, so with both `ALT+E` and `RIGHTALT+E` bound, Right Alt+E runs the `RIGHTALT+E` command. When a binding has several modifiers, press them in the order they are written (`CTRL+ALT+T` means Ctrl, then Alt, then T). Unknown key names are ignored; run with `--debug` to see them.
+A character that needs Shift or AltGr adds it to the binding: on a US keyboard `MOD+&` is Super+Shift+7, and on French `MOD+@` is Super+AltGr+0. With several layouts, characters are looked up in the first one, then the others.
+
+`ALT`, `CTRL`, `SHIFT`, `MOD` and `ALTGR` match every key that acts as that modifier, on either side of the keyboard, including keys your layout options change, like Caps Lock set to act as Ctrl; use the `LEFT…` and `RIGHT…` names to bind only one side. If a combo matches more than one binding, the one-sided binding wins, so with both `ALT+E` and `RIGHTALT+E` bound, Right Alt+E runs the `RIGHTALT+E` command. Modifiers can be pressed in any order. A key name your layout doesn't have is an error when wbindkeys starts.
+
+#### Keyboard layout
+
+wbindkeys asks your compositor for the layout you're using, so it matches what you type. To choose one yourself, for example when there is no compositor, set it in your config with the layout names `localectl` uses:
+
+```lua
+keyboard{ layout = "fr" }
+keyboard{ layout = "us,se", options = "caps:swapescape" }
+```
+
+`keyboard` takes `layout`, `variant` and `options`. Without it and without a compositor, wbindkeys uses `us`. Changing layouts takes effect when wbindkeys restarts.
 
 ## Command line
 
@@ -158,7 +171,7 @@ wbindkeys --version                    show the version
 
 ## Debugging your config
 
-Run with `--debug` (or `-d`) to print log output to stderr: which input devices were opened, the config path being loaded, each registered binding and the key codes it maps to, any unrecognised key names, every key press with its combo, and whether a combo matched a binding.
+Run with `--debug` (or `-d`) to print log output to stderr: which input devices were opened, the config path being loaded, the keyboard layout, each registered binding and the key codes it maps to, every key press with its combo, and whether a combo matched a binding.
 
 ```sh
 systemctl --user stop wbindkeys.service

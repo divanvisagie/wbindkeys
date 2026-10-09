@@ -9,20 +9,6 @@ use crate::parser::Keys;
 
 const SCROLL_HOLD_MS: u64 = 500; // how long a scroll "press" lasts
 
-/// Keys that are remembered while held and put in front of the next key
-/// pressed to make a combo.
-const MODIFIERS: [u32; 9] = [
-    Keys::LeftAlt as u32,
-    Keys::LeftCtrl as u32,
-    Keys::LeftMod as u32,
-    Keys::LeftShift as u32,
-    Keys::RightShift as u32,
-    Keys::Space as u32,
-    Keys::RightCtrl as u32,
-    Keys::RightMod as u32,
-    Keys::RightAlt as u32,
-];
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ScrollDir {
     Up,
@@ -48,14 +34,21 @@ pub struct Observed {
 /// by the main loop and `wbindkeys record`, so a recording shows exactly what
 /// wbindkeys made of each event.
 pub struct Tracker {
+    /// Keys that are remembered while held and put in front of the next key
+    /// pressed to make a combo
+    modifiers: Vec<u32>,
     active_keys: Vec<u32>,
     key_states: HashMap<u32, KeyState>,
     scroll_states: HashMap<ScrollDir, ScrollState>,
 }
 
 impl Tracker {
-    pub fn new() -> Self {
+    /// A tracker that treats `modifiers` (see `Layout::modifier_keys`) and
+    /// Space as modifiers.
+    pub fn new(mut modifiers: Vec<u32>) -> Self {
+        modifiers.push(Keys::Space as u32);
         Tracker {
+            modifiers,
             active_keys: Vec::new(),
             key_states: HashMap::new(),
             scroll_states: HashMap::new(),
@@ -87,7 +80,7 @@ impl Tracker {
         // Make the combo before remembering a pressed modifier, so pressing
         // Alt on its own is [Alt] rather than [Alt, Alt].
         let observed = self.transition(key, state);
-        if MODIFIERS.contains(&key) {
+        if self.modifiers.contains(&key) {
             match state {
                 KeyState::Pressed if !self.active_keys.contains(&key) => self.active_keys.push(key),
                 KeyState::Pressed => {}
@@ -188,6 +181,10 @@ fn scroll_dir_to_key(dir: ScrollDir) -> u32 {
 mod tests {
     use super::*;
 
+    fn tracker() -> Tracker {
+        Tracker::new(crate::layout::Layout::from_names("us", "", "", "test").unwrap().modifier_keys())
+    }
+
     fn press(tracker: &mut Tracker, key: Keys) -> Option<Vec<u32>> {
         tracker.key(key as u32, KeyState::Pressed).combo
     }
@@ -198,7 +195,7 @@ mod tests {
 
     #[test]
     fn held_modifiers_go_in_front_of_the_key() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         press(&mut tracker, Keys::LeftCtrl);
         press(&mut tracker, Keys::LeftAlt);
         assert_eq!(press(&mut tracker, Keys::T), Some(vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32, Keys::T as u32]));
@@ -206,20 +203,20 @@ mod tests {
 
     #[test]
     fn a_modifier_on_its_own_is_its_own_combo() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         assert_eq!(press(&mut tracker, Keys::LeftMod), Some(vec![Keys::LeftMod as u32]));
     }
 
     #[test]
     fn a_combo_can_end_in_a_modifier() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         press(&mut tracker, Keys::LeftCtrl);
         assert_eq!(press(&mut tracker, Keys::LeftAlt), Some(vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32]));
     }
 
     #[test]
     fn releasing_a_modifier_forgets_held_modifiers() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         press(&mut tracker, Keys::LeftMod);
         release(&mut tracker, Keys::LeftMod);
         assert_eq!(press(&mut tracker, Keys::Num8), Some(vec![Keys::Num8 as u32]));
@@ -227,7 +224,7 @@ mod tests {
 
     #[test]
     fn a_held_key_only_makes_a_combo_once() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         assert!(press(&mut tracker, Keys::T).is_some());
         assert_eq!(press(&mut tracker, Keys::T), None);
         release(&mut tracker, Keys::T);
@@ -236,7 +233,7 @@ mod tests {
 
     #[test]
     fn scrolling_presses_a_virtual_key_until_it_stops() {
-        let mut tracker = Tracker::new();
+        let mut tracker = tracker();
         let start = Instant::now();
         let combo = tracker.scroll(ScrollDir::Up, start).and_then(|observed| observed.combo);
         assert_eq!(combo, Some(vec![Keys::ScrollUp as u32]));

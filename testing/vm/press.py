@@ -1,5 +1,5 @@
-"""Runs inside the e2e VM: starts wbindkeys, presses key combos on a uinput
-virtual keyboard and checks which bindings fired.
+"""Runs inside the e2e VM: starts wbindkeys with each test config, presses
+key combos on a uinput virtual keyboard and checks which bindings fired.
 
 Usage: press.py <wbindkeys binary>
 """
@@ -19,12 +19,14 @@ LOG = os.path.join(HERE, "wbindkeys.log")
 RECORDING = os.path.join(HERE, "recording.txt")
 
 # (combo as pressed, keys in the order they are pressed, markers that should appear)
-CASES = [
-    ("Super+8 (AZERTY _)", [e.KEY_LEFTMETA, e.KEY_8], {"mod-8"}),
+US_CASES = [
+    ("Super+8", [e.KEY_LEFTMETA, e.KEY_8], {"mod-8"}),
     ("8 alone", [e.KEY_8], set()),
-    ("Super+1 (AZERTY &)", [e.KEY_LEFTMETA, e.KEY_1], {"mod-1"}),
+    ("Super+1", [e.KEY_LEFTMETA, e.KEY_1], {"mod-1"}),
     ("1 alone", [e.KEY_1], set()),
-    ("Super+Shift+7 (QWERTY &)", [e.KEY_LEFTMETA, e.KEY_LEFTSHIFT, e.KEY_7], {"mod-shift-7"}),
+    ("Super+Shift+7 (&)", [e.KEY_LEFTMETA, e.KEY_LEFTSHIFT, e.KEY_7], {"mod-amp"}),
+    ("Shift+Super+7 (&)", [e.KEY_LEFTSHIFT, e.KEY_LEFTMETA, e.KEY_7], {"mod-amp"}),
+    ("Super+7 (no Shift)", [e.KEY_LEFTMETA, e.KEY_7], set()),
     ("RightSuper+RightShift+- (QWERTY _)", [e.KEY_RIGHTMETA, e.KEY_RIGHTSHIFT, e.KEY_MINUS], {"mod-shift-dash"}),
     ("LeftAlt+E", [e.KEY_LEFTALT, e.KEY_E], {"alt-e"}),
     ("RightAlt+E", [e.KEY_RIGHTALT, e.KEY_E], {"alt-e"}),
@@ -33,12 +35,24 @@ CASES = [
     ("LeftAlt+K", [e.KEY_LEFTALT, e.KEY_K], {"alt-k"}),
     ("RightAlt+K", [e.KEY_RIGHTALT, e.KEY_K], {"rightalt-k"}),
     ("Ctrl+Alt+T", [e.KEY_LEFTCTRL, e.KEY_LEFTALT, e.KEY_T], {"ctrl-alt-t"}),
-    ("Alt+Ctrl+T (out of order)", [e.KEY_LEFTALT, e.KEY_LEFTCTRL, e.KEY_T], set()),
+    ("Alt+Ctrl+T (any order)", [e.KEY_LEFTALT, e.KEY_LEFTCTRL, e.KEY_T], {"ctrl-alt-t"}),
     ("RightCtrl alone", [e.KEY_RIGHTCTRL], {"rightctrl"}),
     ("Shift+Alt", [e.KEY_LEFTSHIFT, e.KEY_LEFTALT], {"shift-alt"}),
     ("Super tapped alone", [e.KEY_LEFTMETA], {"mod-tap"}),
     ("Alt+1 (on release)", [e.KEY_LEFTALT, e.KEY_1], {"alt-1-release"}),
 ]
+
+FR_CASES = [
+    ("Super+& key", [e.KEY_LEFTMETA, e.KEY_1], {"mod-amp"}),
+    ("Super+_ key", [e.KEY_LEFTMETA, e.KEY_8], {"mod-underscore"}),
+    ("Alt+A key (Q on QWERTY)", [e.KEY_LEFTALT, e.KEY_Q], {"alt-a"}),
+    ("Alt+Q key (A on QWERTY)", [e.KEY_LEFTALT, e.KEY_A], set()),
+    ("Super+Shift+_ key (8)", [e.KEY_LEFTMETA, e.KEY_LEFTSHIFT, e.KEY_8], {"mod-8"}),
+    ("Super+AltGr+0 (@)", [e.KEY_LEFTMETA, e.KEY_RIGHTALT, e.KEY_0], {"mod-at"}),
+]
+
+# (name, config directory next to this script, cases)
+SUITES = [("us", "us", US_CASES), ("fr", "fr", FR_CASES)]
 
 
 def press(keyboard, keys):
@@ -95,45 +109,60 @@ def check_record(keyboard, binary, env):
     return failures
 
 
+def run_suite(keyboard, binary, name, config, cases):
+    """Runs wbindkeys with one config and presses each case's combo.
+    Returns the number of failed cases, or None if wbindkeys didn't start."""
+    env = dict(os.environ, XDG_CONFIG_HOME=os.path.join(HERE, config))
+    with open(LOG, "w") as log:
+        wbindkeys = subprocess.Popen([binary, "--debug"], stderr=log, env=env)
+    try:
+        if not wait_for(LOG, "listening for input events"):
+            print(f"wbindkeys did not start with the {name} config:\n" + open(LOG).read())
+            return None
+        time.sleep(1)
+
+        failures = 0
+        for case, combo, expected in cases:
+            shutil.rmtree(MARKS, ignore_errors=True)
+            os.makedirs(MARKS)
+            press(keyboard, combo)
+            time.sleep(0.5)
+            fired = set(os.listdir(MARKS))
+            ok = fired == expected
+            failures += not ok
+            print(f"[{'ok' if ok else 'FAIL'}] {name}: {case:36} fired: {', '.join(sorted(fired)) or '-'}"
+                  + ("" if ok else f" (expected: {', '.join(sorted(expected)) or '-'})"))
+        return failures
+    finally:
+        wbindkeys.terminate()
+        wbindkeys.wait()
+
+
 def main():
     binary = sys.argv[1]
-    keys = sorted({key for _, combo, _ in CASES for key in combo})
+    keys = sorted({key for _, _, cases in SUITES for _, combo, _ in cases for key in combo})
 
     # Create the keyboard before starting wbindkeys, so it is picked up when
     # libinput enumerates devices rather than depending on hotplug timing.
     with UInput({e.EV_KEY: keys}, name="wbindkeys-e2e keyboard") as keyboard:
         time.sleep(1)
-        env = dict(os.environ, XDG_CONFIG_HOME=os.path.join(HERE, "config"))
-        with open(LOG, "w") as log:
-            wbindkeys = subprocess.Popen([binary, "--debug"], stderr=log, env=env)
-        try:
-            if not wait_for(LOG, "listening for input events"):
-                print("wbindkeys did not start, see", LOG)
+        failures = 0
+        total = 0
+        for name, config, cases in SUITES:
+            result = run_suite(keyboard, binary, name, config, cases)
+            if result is None:
                 return 1
-            time.sleep(1)
+            failures += result
+            total += len(cases)
 
-            failures = 0
-            for name, combo, expected in CASES:
-                shutil.rmtree(MARKS, ignore_errors=True)
-                os.makedirs(MARKS)
-                press(keyboard, combo)
-                time.sleep(0.5)
-                fired = set(os.listdir(MARKS))
-                ok = fired == expected
-                failures += not ok
-                print(f"[{'ok' if ok else 'FAIL'}] {name:36} fired: {', '.join(sorted(fired)) or '-'}"
-                      + ("" if ok else f" (expected: {', '.join(sorted(expected)) or '-'})"))
-        finally:
-            wbindkeys.terminate()
-            wbindkeys.wait()
-
+        env = dict(os.environ, XDG_CONFIG_HOME=os.path.join(HERE, "us"))
         record_failures = check_record(keyboard, binary, env)
 
     if failures or record_failures:
-        print(f"\n{failures} of {len(CASES)} cases and {record_failures} record checks failed; "
+        print(f"\n{failures} of {total} cases and {record_failures} record checks failed; "
               f"wbindkeys --debug output is in {LOG}")
         return 1
-    print(f"\nAll {len(CASES)} cases and record checks passed")
+    print(f"\nAll {total} cases and record checks passed")
     return 0
 
 

@@ -48,17 +48,18 @@ done
 lxc exec "$VM" -- cloud-init status --wait >/dev/null 2>&1 || true
 
 lxc exec "$VM" -- sh -c '
-    dpkg -s libinput10 python3-evdev >/dev/null 2>&1 && exit 0
-    echo "Installing libinput and python3-evdev in the VM..."
+    packages="libinput10 libxkbcommon0 xkb-data python3-evdev"
+    dpkg -s $packages >/dev/null 2>&1 && exit 0
+    echo "Installing $packages in the VM..."
     apt-get update -q >/dev/null &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y -q libinput10 python3-evdev >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -q $packages >/dev/null
 '
 
 lxc exec "$VM" -- rm -rf "$GUEST_DIR"
 lxc exec "$VM" -- mkdir -p "$GUEST_DIR"
 lxc file push --quiet "$BIN" "$VM$GUEST_DIR/wbindkeys"
 lxc file push --quiet "$HERE/press.py" "$VM$GUEST_DIR/press.py"
-lxc file push --quiet --recursive "$HERE/config" "$VM$GUEST_DIR/"
+lxc file push --quiet --recursive "$HERE/us" "$HERE/fr" "$VM$GUEST_DIR/"
 
 echo "Running the end-to-end test in $VM..."
 status=0

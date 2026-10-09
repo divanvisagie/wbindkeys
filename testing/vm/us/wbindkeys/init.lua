@@ -1,14 +1,16 @@
--- Config for the end-to-end test (testing/vm/e2e.sh). Every binding touches
--- a marker file named after it, which press.py checks after each combo.
+-- US config for the end-to-end test (testing/vm/e2e.sh). Every binding
+-- touches a marker file named after it, which press.py checks after each
+-- combo. The VM has no compositor to ask for the layout, so it's set here.
+keyboard{ layout = "us" }
 
 local function mark(name)
 	return "touch /tmp/wbindkeys-e2e/" .. name
 end
 
--- Physical keys for & and _ on French AZERTY and US QWERTY
 bind("MOD+8", mark("mod-8"))
 bind("MOD+1", mark("mod-1"))
-bind("MOD+SHIFT+7", mark("mod-shift-7"))
+-- & is Shift+7, so this adds the Shift; _ is written out in full
+bind("MOD+&", mark("mod-amp"))
 bind("MOD+SHIFT+DASH", mark("mod-shift-dash"))
 
 -- ALT matches either side, RIGHTALT only the right
@@ -19,7 +21,7 @@ bind("RIGHTALT+T", mark("rightalt-t"))
 bind("ALT+K", mark("alt-k"))
 bind("RIGHTALT+K", mark("rightalt-k"))
 
--- Modifiers are pressed in the order they are written
+-- Modifiers can be pressed in any order
 bind("CTRL+ALT+T", mark("ctrl-alt-t"))
 
 -- Combos that are only modifiers

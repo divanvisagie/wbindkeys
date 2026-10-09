@@ -45,9 +45,9 @@ any Wayland compositor. This is also why it needs permission to read
 <code>/dev/input</code> (see <a
 href="#permissions">Permissions</a>).</p>
 <h2 id="installation-and-setup">Installation and setup</h2>
-<p>wbindkeys needs the libinput, libudev and libevdev development
-packages to build. On Debian/Ubuntu:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install pkg-config libevdev-dev libudev-dev libinput-dev</span></code></pre></div>
+<p>wbindkeys needs the libinput, libudev, libevdev and libxkbcommon
+development packages to build. On Debian/Ubuntu:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install pkg-config libevdev-dev libudev-dev libinput-dev libxkbcommon-dev</span></code></pre></div>
 <p>On other distributions install the equivalent packages with your
 package manager.</p>
 <h3 id="from-cratesio">From crates.io</h3>
@@ -153,7 +153,11 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#c
 <p>After changing the config, restart the service:
 <code>systemctl --user restart wbindkeys.service</code>.</p>
 <h3 id="key-names">Key names</h3>
-<p>Key names are case-insensitive and joined with <code>+</code>.</p>
+<p>Key names are case-insensitive and joined with <code>+</code>. They
+follow your keyboard layout: a binding means the keys you see labelled
+with it, so on a French AZERTY keyboard <code>ALT+A</code> is the key
+labelled A, and <code>MOD+&amp;</code> and <code>MOD+_</code> are the
+keys labelled <code>&amp;</code> and <code>_</code>.</p>
 <table>
 <thead>
 <tr>
@@ -163,19 +167,23 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#c
 </thead>
 <tbody>
 <tr>
+<td>Characters</td>
+<td>Any character your layout can type: <code>A</code>–<code>Z</code>,
+<code>0</code>–<code>9</code>, <code>&amp;</code>, <code>_</code>,
+<code>@</code>, <code>é</code>, … Use <code>PLUS</code> for
+<code>+</code>, since it separates keys</td>
+</tr>
+<tr>
 <td>Modifiers</td>
 <td><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code>,
-<code>MOD</code> (the Super/Windows key), <code>SPACE</code></td>
+<code>MOD</code> (the Super/Windows key), <code>ALTGR</code>,
+<code>SPACE</code></td>
 </tr>
 <tr>
 <td>One-sided modifiers</td>
 <td><code>LEFTALT</code>, <code>LEFTCTRL</code>, <code>LEFTSHIFT</code>,
 <code>LEFTMOD</code>, <code>RIGHTALT</code>, <code>RIGHTCTRL</code>,
 <code>RIGHTSHIFT</code>, <code>RIGHTMOD</code></td>
-</tr>
-<tr>
-<td>Letters and numbers</td>
-<td><code>A</code>–<code>Z</code>, <code>0</code>–<code>9</code></td>
 </tr>
 <tr>
 <td>Function keys</td>
@@ -194,8 +202,10 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#c
 <code>TAB</code>, <code>BACKTICK</code>, <code>COMMA</code>,
 <code>PERIOD</code>, <code>SLASH</code>, <code>BACKSLASH</code>,
 <code>SEMICOLON</code>, <code>QUOTE</code>, <code>DASH</code>,
-<code>EQUAL</code>, <code>LEFTSQUARE</code>,
-<code>RIGHTSQUARE</code></td>
+<code>EQUAL</code>, <code>LEFTSQUARE</code>, <code>RIGHTSQUARE</code>,
+and any <a
+href="https://github.com/xkbcommon/libxkbcommon/blob/master/include/xkbcommon/xkbcommon-keysyms.h">xkb
+keysym name</a>, like <code>XF86AudioMute</code></td>
 </tr>
 <tr>
 <td>Mouse</td>
@@ -205,15 +215,32 @@ class="sourceCode lua"><code class="sourceCode lua"><span id="cb9-1"><a href="#c
 </tr>
 </tbody>
 </table>
-<p><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code> and
-<code>MOD</code> match the key on either side of the keyboard; use the
+<p>A character that needs Shift or AltGr adds it to the binding: on a US
+keyboard <code>MOD+&amp;</code> is Super+Shift+7, and on French
+<code>MOD+@</code> is Super+AltGr+0. With several layouts, characters
+are looked up in the first one, then the others.</p>
+<p><code>ALT</code>, <code>CTRL</code>, <code>SHIFT</code>,
+<code>MOD</code> and <code>ALTGR</code> match every key that acts as
+that modifier, on either side of the keyboard, including keys your
+layout options change, like Caps Lock set to act as Ctrl; use the
 <code>LEFT…</code> and <code>RIGHT…</code> names to bind only one side.
 If a combo matches more than one binding, the one-sided binding wins, so
 with both <code>ALT+E</code> and <code>RIGHTALT+E</code> bound, Right
-Alt+E runs the <code>RIGHTALT+E</code> command. When a binding has
-several modifiers, press them in the order they are written
-(<code>CTRL+ALT+T</code> means Ctrl, then Alt, then T). Unknown key
-names are ignored; run with <code>--debug</code> to see them.</p>
+Alt+E runs the <code>RIGHTALT+E</code> command. Modifiers can be pressed
+in any order. A key name your layout doesn't have is an error when
+wbindkeys starts.</p>
+<h4 id="keyboard-layout">Keyboard layout</h4>
+<p>wbindkeys asks your compositor for the layout you're using, so it
+matches what you type. To choose one yourself, for example when there is
+no compositor, set it in your config with the layout names
+<code>localectl</code> uses:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode lua"><code class="sourceCode lua"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>keyboard<span class="op">{</span> <span class="va">layout</span> <span class="op">=</span> <span class="st">&quot;fr&quot;</span> <span class="op">}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>keyboard<span class="op">{</span> <span class="va">layout</span> <span class="op">=</span> <span class="st">&quot;us,se&quot;</span><span class="op">,</span> <span class="va">options</span> <span class="op">=</span> <span class="st">&quot;caps:swapescape&quot;</span> <span class="op">}</span></span></code></pre></div>
+<p><code>keyboard</code> takes <code>layout</code>, <code>variant</code>
+and <code>options</code>. Without it and without a compositor, wbindkeys
+uses <code>us</code>. Changing layouts takes effect when wbindkeys
+restarts.</p>
 <h2 id="command-line">Command line</h2>
 <pre><code>wbindkeys                              run wbindkeys (this is what the service does)
 wbindkeys --debug                      run with log output, see &quot;Debugging your config&quot;
@@ -239,12 +266,12 @@ in mdoc; a test checks it mentions every subcommand and flag.</p>
 <h2 id="debugging-your-config">Debugging your config</h2>
 <p>Run with <code>--debug</code> (or <code>-d</code>) to print log
 output to stderr: which input devices were opened, the config path being
-loaded, each registered binding and the key codes it maps to, any
-unrecognised key names, every key press with its combo, and whether a
-combo matched a binding.</p>
-<div class="sourceCode" id="cb11"><pre
-class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> stop wbindkeys.service</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> <span class="at">--debug</span></span></code></pre></div>
+loaded, the keyboard layout, each registered binding and the key codes
+it maps to, every key press with its combo, and whether a combo matched
+a binding.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> stop wbindkeys.service</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> <span class="at">--debug</span></span></code></pre></div>
 <p>If the output shows
 <code>Failed to open input device ... Permission denied</code>, or key
 presses don't show up at all, see <a
@@ -253,8 +280,8 @@ href="#permissions">Permissions</a>.</p>
 combination that doesn't work</h2>
 <p>If a binding doesn't fire, record what wbindkeys sees while you press
 it:</p>
-<div class="sourceCode" id="cb12"><pre
-class="sourceCode sh"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> record</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">wbindkeys</span> record</span></code></pre></div>
 <p>Press the combination, then Ctrl+C. This saves
 <code>wbindkeys-recording.txt</code> (use <code>-o</code> to pick
 another file), with each key press, what wbindkeys made of it and which
@@ -264,11 +291,11 @@ href="https://github.com/divanvisagie/wbindkeys/issues">Open an
 issue</a> and attach the file. Everything you type while recording is
 saved, so don't type passwords.</p>
 <h2 id="development-setup">Development setup</h2>
-<div class="sourceCode" id="cb13"><pre
-class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build-debug    <span class="co"># or `make build-release`; run `make` to list all targets</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> test</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> builddep</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> permissions    <span class="co"># once, so you can read input devices without sudo</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build-debug    <span class="co"># or `make build-release`; run `make` to list all targets</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> test</span></code></pre></div>
 <p>To try your changes:</p>
 <ul>
 <li><code>make run</code> builds and runs wbindkeys against your normal

@@ -7,7 +7,6 @@ use std::ffi::CStr;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -60,26 +59,27 @@ pub fn record(output: &Path) -> Result<(), String> {
         std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_else(|_| "unknown".into()),
         std::env::var("XDG_SESSION_TYPE").unwrap_or_else(|_| "unknown session type".into())
     ))?;
-    for line in keyboard_settings() {
-        recording.line(&format!("# keyboard {}", line))?;
-    }
 
     // Bindings are listed without their commands, which may be private.
     let config_path = crate::config_path();
-    let script_manager = match crate::load_config(&config_path) {
-        Ok(script_manager) => {
+    let (script_manager, layout) = match crate::load_config(&config_path, false) {
+        Ok((script_manager, layout)) => {
             recording.line(&format!("# config: {}", config_path.display()))?;
-            for (name, keys, on_release) in script_manager.bindings() {
-                let trigger = if on_release { " on release" } else { "" };
-                recording.line(&format!("# binding {}{} => {}", name, trigger, format_choices(&keys)))?;
-            }
-            Some(script_manager)
+            (Some(script_manager), layout)
         }
         Err(err) => {
-            recording.line(&format!("# config: not loaded: {}", err))?;
-            None
+            for (i, line) in err.lines().enumerate() {
+                let prefix = if i == 0 { "# config: not loaded: " } else { "#   " };
+                recording.line(&format!("{}{}", prefix, line))?;
+            }
+            (None, crate::choose_layout(None, false)?)
         }
     };
+    recording.line(&format!("# layout from {}: {}", layout.source, layout.names().join(", ")))?;
+    for (name, keys, on_release) in script_manager.iter().flat_map(|script_manager| script_manager.bindings()) {
+        let trigger = if on_release { " on release" } else { "" };
+        recording.line(&format!("# binding {}{} => {}", name, trigger, format_choices(&keys)))?;
+    }
 
     recording.line("#")?;
     recording.line(&format!(
@@ -92,7 +92,7 @@ pub fn record(output: &Path) -> Result<(), String> {
     }
 
     let mut input = crate::open_input();
-    let mut tracker = Tracker::new();
+    let mut tracker = Tracker::new(layout.modifier_keys());
     let mut devices = 0;
     let mut events = 0;
     let mut start_usec = None;
@@ -236,30 +236,6 @@ fn system() -> String {
         let field = |chars: &[libc::c_char]| CStr::from_ptr(chars.as_ptr()).to_string_lossy().into_owned();
         format!("{} {} {}", field(&name.sysname), field(&name.release), field(&name.machine))
     }
-}
-
-/// The keyboard layout settings, from XKB_DEFAULT_* and `localectl`, where
-/// available. wbindkeys doesn't use them yet, but they help explain reports
-/// from non-US layouts.
-fn keyboard_settings() -> Vec<String> {
-    let mut settings: Vec<String> = ["RULES", "MODEL", "LAYOUT", "VARIANT", "OPTIONS"]
-        .iter()
-        .filter_map(|part| {
-            let name = format!("XKB_DEFAULT_{}", part);
-            std::env::var(&name).ok().map(|value| format!("{}: {}", name, value))
-        })
-        .collect();
-
-    if let Ok(output) = Command::new("localectl").arg("status").output() {
-        settings.extend(
-            String::from_utf8_lossy(&output.stdout)
-                .lines()
-                .map(str::trim)
-                .filter(|line| line.starts_with("X11 ") || line.starts_with("VC Keymap"))
-                .map(str::to_string),
-        );
-    }
-    settings
 }
 
 #[cfg(test)]

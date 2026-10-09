@@ -48,7 +48,7 @@ The options are as follows:
 .It Fl d , Fl -debug
 Print log output to stderr: which input devices were opened (or could not
 be opened), the configuration file being loaded, each registered binding and
-the key codes it maps to, unrecognised key names, every key press with its
+the key codes it maps to, the keyboard layout, every key press with its
 combination, and whether it matched a binding.
 .It Fl h , Fl -help
 Print a summary of options and exit.
@@ -174,12 +174,17 @@ Key names are case-insensitive and joined with
 .Sq + .
 The available names are:
 .Bl -tag -width Ds
+.It Characters
+Any character the keyboard layout can type: A to Z, 0 to 9, &, _, @ and so
+on.
+PLUS is the + key, since + separates keys.
 .It Modifiers
-ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the one-sided
+ALT, CTRL, SHIFT, MOD (the Super key), ALTGR, SPACE, and the one-sided
 LEFTALT, LEFTCTRL, LEFTSHIFT, LEFTMOD, RIGHTALT, RIGHTCTRL, RIGHTSHIFT,
 RIGHTMOD.
-ALT, CTRL, SHIFT and MOD match the key on either side of the keyboard; the
-LEFT and RIGHT names match only that side.
+ALT, CTRL, SHIFT, MOD and ALTGR match every key that acts as that modifier,
+on either side of the keyboard; the LEFT and RIGHT names match only that
+side.
 If a combination matches more than one binding, the one-sided binding wins.
 .It Letters, numbers and function keys
 A to Z, 0 to 9, F1 to F12.
@@ -190,13 +195,41 @@ ESCAPE, ENTER, BACKSPACE, TAB, BACKTICK, COMMA, PERIOD, SLASH, BACKSLASH,
 SEMICOLON, QUOTE, DASH, EQUAL, LEFTSQUARE, RIGHTSQUARE.
 .It Mouse
 MOUSE1 to MOUSE10, SCROLLUP, SCROLLDOWN, SCROLLLEFT, SCROLLRIGHT.
+.It Keysyms
+Any other xkb keysym name, such as XF86AudioMute.
 .El
 .Pp
-When a binding has several modifiers they must be pressed in the order they
-are written.
-Unknown key names are ignored; run with
-.Fl -debug
-to see them.
+Keys follow the keyboard layout: a binding means the keys labelled with it,
+so on a French keyboard ALT+A is the key labelled A.
+A character that needs Shift or AltGr adds it to the binding: on a US
+keyboard MOD+& is Super+Shift+7.
+With several layouts, characters are looked up in the first one, then the
+others.
+Modifiers can be pressed in any order.
+A key name the layout doesn't have is an error at startup.
+.Pp
+The layout is the one the compositor uses.
+To choose one yourself, call
+.Fn keyboard
+with the layout names
+.Xr localectl 1
+uses:
+.Bd -literal -offset indent
+keyboard{ layout = "fr" }
+keyboard{ layout = "us,se", options = "caps:swapescape" }
+.Ed
+.Pp
+It takes
+.Cm layout ,
+.Cm variant
+and
+.Cm options .
+Without it and without a compositor,
+.Nm
+uses the US layout.
+Changes to the layout take effect when
+.Nm
+restarts.
 .Sh PERMISSIONS
 .Nm
 runs as a normal user and needs read access to

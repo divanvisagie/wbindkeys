@@ -2,7 +2,8 @@ use clap::{Args as ClapArgs, Parser, Subcommand};
 use dirs::config_dir;
 use input::{Libinput, LibinputInterface};
 use libc::{O_RDONLY, O_RDWR, O_WRONLY};
-use script_manager::ScriptManager;
+use layout::Layout;
+use script_manager::{KeyboardSetting, ScriptManager};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::os::unix::{fs::OpenOptionsExt, io::OwnedFd};
@@ -23,6 +24,7 @@ macro_rules! debug {
     };
 }
 
+mod layout;
 mod parser;
 mod permissions;
 mod record;
@@ -72,9 +74,10 @@ fn config_path() -> PathBuf {
         .join("init.lua")
 }
 
-/// A script manager with the user's config loaded, or an error if the config
-/// can't be read or run.
-fn load_config(config_path: &Path) -> Result<ScriptManager, String> {
+/// The user's config, run and with its bindings looked up in the keyboard
+/// layout, or an error if the config can't be read or run or names keys the
+/// layout doesn't have. See `choose_layout` for `wait`.
+fn load_config(config_path: &Path, wait: bool) -> Result<(ScriptManager, Layout), String> {
     let script_manager = ScriptManager::new();
     script_manager.register_functions().map_err(|err| err.to_string())?;
     debug!("Loading config from {:?}", config_path);
@@ -83,7 +86,44 @@ fn load_config(config_path: &Path) -> Result<ScriptManager, String> {
     script_manager
         .load_script(&script)
         .map_err(|err| format!("running {}: {}", config_path.display(), err))?;
-    Ok(script_manager)
+    let layout = choose_layout(script_manager.keyboard(), wait)?;
+    script_manager
+        .resolve(&layout)
+        .map_err(|err| format!("in {}:\n{}", config_path.display(), err))?;
+    Ok((script_manager, layout))
+}
+
+/// The layout bindings are looked up in: the config's keyboard{} setting if
+/// it has one, otherwise the compositor's, otherwise US. With `wait`, keeps
+/// trying the compositor for a few seconds, for a service that starts before
+/// the desktop does.
+fn choose_layout(setting: Option<KeyboardSetting>, wait: bool) -> Result<Layout, String> {
+    if let Some(setting) = setting {
+        debug!("Keyboard layout from the config: {:?}", setting);
+        return Layout::from_names(&setting.layout, &setting.variant, &setting.options, "config")
+            .map_err(|err| format!("keyboard{{}} in your config: {}", err));
+    }
+
+    let attempts = if wait { 10 } else { 1 };
+    let mut error = String::new();
+    for attempt in 1..=attempts {
+        match Layout::from_compositor() {
+            Ok(layout) => {
+                debug!("Keyboard layout from the compositor: {}", layout.names().join(", "));
+                return Ok(layout);
+            }
+            Err(err) => error = err,
+        }
+        if attempt < attempts {
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    }
+    eprintln!(
+        "warning: couldn't get the keyboard layout from the compositor ({}), using us; \
+         set keyboard{{ layout = \"...\" }} in your config to choose one",
+        error
+    );
+    Layout::from_names("us", "", "", "default")
 }
 
 /// Bind keys, mouse buttons and scroll events to commands on Wayland.
@@ -206,10 +246,13 @@ fn main() {
     if !config_path.exists() {
         panic!("Config file not found at {:?}", config_path);
     }
-    let script_manager = load_config(&config_path).unwrap();
+    let (script_manager, layout) = load_config(&config_path, true).unwrap_or_else(|err| {
+        eprintln!("error: {}", err);
+        std::process::exit(1);
+    });
     debug!("Config loaded, listening for input events");
 
-    let mut tracker = Tracker::new();
+    let mut tracker = Tracker::new(layout.modifier_keys());
     loop {
         input.dispatch().unwrap();
 

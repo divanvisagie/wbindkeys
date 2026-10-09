@@ -1,3 +1,10 @@
+use crate::layout::{Layout, Modifier};
+use xkbcommon::xkb::{self, Keysym};
+
+/// Linux key codes. Keys in bindings are looked up in the keyboard layout,
+/// so these are only used for mouse buttons and scrolls, for modifiers a
+/// layout doesn't have, and in tests.
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum Keys {
     A = 0x1E,
@@ -98,252 +105,297 @@ pub enum Keys {
     ScrollDown = 0x999,
     }
 
-/// Parses a binding like "ALT+T" into the key codes that can satisfy each of
-/// its parts, in order. `ALT`, `CTRL`, `SHIFT` and `MOD` accept either the
-/// left- or right-hand key; every other name accepts exactly one key.
-pub fn parse_binding(binding: &str) -> Vec<Vec<u32>> {
-    let strings: Vec<String> = binding.split('+').map(|s| s.to_string()).collect();
+/// One part of a binding as written, before it is looked up in a layout.
+enum Name {
+    /// ALT, CTRL, SHIFT, MOD or ALTGR: every key that acts as that modifier
+    Modifier(Modifier),
+    /// LEFTALT and friends: the key that types that keysym, or the usual
+    /// key when the layout has none
+    OneSided(Keysym, Keys),
+    /// Any other key, by the keysym it types
+    Keysym(Keysym, String),
+    /// Mouse buttons and scrolls, which have no layout
+    Pointer(Keys),
+}
 
-    let mut keys = Vec::new();
-    for string in strings {
-        match string.to_uppercase().as_str() {
-            "A" => keys.push(vec![Keys::A as u32]),
-            "B" => keys.push(vec![Keys::B as u32]),
-            "C" => keys.push(vec![Keys::C as u32]),
-            "D" => keys.push(vec![Keys::D as u32]),
-            "E" => keys.push(vec![Keys::E as u32]),
-            "F" => keys.push(vec![Keys::F as u32]),
-            "G" => keys.push(vec![Keys::G as u32]),
-            "H" => keys.push(vec![Keys::H as u32]),
-            "I" => keys.push(vec![Keys::I as u32]),
-            "J" => keys.push(vec![Keys::J as u32]),
-            "K" => keys.push(vec![Keys::K as u32]),
-            "L" => keys.push(vec![Keys::L as u32]),
-            "M" => keys.push(vec![Keys::M as u32]),
-            "N" => keys.push(vec![Keys::N as u32]),
-            "O" => keys.push(vec![Keys::O as u32]),
-            "P" => keys.push(vec![Keys::P as u32]),
-            "Q" => keys.push(vec![Keys::Q as u32]),
-            "R" => keys.push(vec![Keys::R as u32]),
-            "S" => keys.push(vec![Keys::S as u32]),
-            "T" => keys.push(vec![Keys::T as u32]),
-            "U" => keys.push(vec![Keys::U as u32]),
-            "V" => keys.push(vec![Keys::V as u32]),
-            "W" => keys.push(vec![Keys::W as u32]),
-            "X" => keys.push(vec![Keys::X as u32]),
-            "Y" => keys.push(vec![Keys::Y as u32]),
-            "Z" => keys.push(vec![Keys::Z as u32]),
-            "0" => keys.push(vec![Keys::Num0 as u32]),
-            "1" => keys.push(vec![Keys::Num1 as u32]),
-            "2" => keys.push(vec![Keys::Num2 as u32]),
-            "3" => keys.push(vec![Keys::Num3 as u32]),
-            "4" => keys.push(vec![Keys::Num4 as u32]),
-            "5" => keys.push(vec![Keys::Num5 as u32]),
-            "6" => keys.push(vec![Keys::Num6 as u32]),
-            "7" => keys.push(vec![Keys::Num7 as u32]),
-            "8" => keys.push(vec![Keys::Num8 as u32]),
-            "9" => keys.push(vec![Keys::Num9 as u32]),
-            "BACKTICK" => keys.push(vec![Keys::BackTick as u32]),
-            "ESCAPE" => keys.push(vec![Keys::Escape as u32]),
-            "F1" => keys.push(vec![Keys::F1 as u32]),
-            "F2" => keys.push(vec![Keys::F2 as u32]),
-            "F3" => keys.push(vec![Keys::F3 as u32]),
-            "F4" => keys.push(vec![Keys::F4 as u32]),
-            "F5" => keys.push(vec![Keys::F5 as u32]),
-            "F6" => keys.push(vec![Keys::F6 as u32]),
-            "F7" => keys.push(vec![Keys::F7 as u32]),
-            "F8" => keys.push(vec![Keys::F8 as u32]),
-            "F9" => keys.push(vec![Keys::F9 as u32]),
-            "F10" => keys.push(vec![Keys::F10 as u32]),
-            "F11" => keys.push(vec![Keys::F11 as u32]),
-            "F12" => keys.push(vec![Keys::F12 as u32]),
-            "LEFTALT" => keys.push(vec![Keys::LeftAlt as u32]),
-            "LEFTCTRL" => keys.push(vec![Keys::LeftCtrl as u32]),
-            "LEFTSHIFT" => keys.push(vec![Keys::LeftShift as u32]),
-            "CTRL" => keys.push(vec![Keys::LeftCtrl as u32, Keys::RightCtrl as u32]),
-            "LEFTMOD" => keys.push(vec![Keys::LeftMod as u32]),
-            "ALT" => keys.push(vec![Keys::LeftAlt as u32, Keys::RightAlt as u32]),
-            "SHIFT" => keys.push(vec![Keys::LeftShift as u32, Keys::RightShift as u32]),
-            "MOD" => keys.push(vec![Keys::LeftMod as u32, Keys::RightMod as u32]),
-            "SPACE" => keys.push(vec![Keys::Space as u32]),
-            "ENTER" => keys.push(vec![Keys::Enter as u32]),
-            "BACKSPACE" => keys.push(vec![Keys::Backspace as u32]),
-            "TAB" => keys.push(vec![Keys::Tab as u32]),
-            "UP" => keys.push(vec![Keys::Up as u32]),
-            "DOWN" => keys.push(vec![Keys::Down as u32]),
-            "LEFT" => keys.push(vec![Keys::Left as u32]),
-            "RIGHT" => keys.push(vec![Keys::Right as u32]),
-            "INSERT" => keys.push(vec![Keys::Insert as u32]),
-            "DELETE" => keys.push(vec![Keys::Delete as u32]),
-            "HOME" => keys.push(vec![Keys::Home as u32]),
-            "END" => keys.push(vec![Keys::End as u32]),
-            "PAGEUP" => keys.push(vec![Keys::PageUp as u32]),
-            "PAGEDOWN" => keys.push(vec![Keys::PageDown as u32]),
-            "COMMA"=> keys.push(vec![Keys::Comma as u32]),
-            "PERIOD"=> keys.push(vec![Keys::Period as u32]),
-            "SLASH"=> keys.push(vec![Keys::Slash as u32]),
-            "RIGHTCTRL"=> keys.push(vec![Keys::RightCtrl as u32]),
-            "RIGHTALT"=> keys.push(vec![Keys::RightAlt as u32]),
-            "RIGHTSHIFT"=> keys.push(vec![Keys::RightShift as u32]),
-            "RIGHTMOD"=> keys.push(vec![Keys::RightMod as u32]),
-            "LEFTSQUARE"=> keys.push(vec![Keys::LeftSquare as u32]),
-            "RIGHTSQUARE"=> keys.push(vec![Keys::RightSquare as u32]),
-            "SEMICOLON"=> keys.push(vec![Keys::SemiColon as u32]),
-            "QUOTE"=> keys.push(vec![Keys::Quote as u32]),
-            "BACKSLASH"=> keys.push(vec![Keys::BackSlash as u32]),
-            "DASH"=> keys.push(vec![Keys::Dash as u32]),
-            "EQUAL"=> keys.push(vec![Keys::Equal as u32]),
-            "MOUSE1"=> keys.push(vec![Keys::Mouse1 as u32]),
-            "MOUSE2"=> keys.push(vec![Keys::Mouse2 as u32]),
-            "MOUSE3"=> keys.push(vec![Keys::Mouse3 as u32]),
-            "MOUSE4"=> keys.push(vec![Keys::Mouse4 as u32]),
-            "MOUSE5"=> keys.push(vec![Keys::Mouse5 as u32]),
-            "MOUSE6"=> keys.push(vec![Keys::Mouse6 as u32]),
-            "MOUSE7"=> keys.push(vec![Keys::Mouse7 as u32]),
-            "MOUSE8"=> keys.push(vec![Keys::Mouse8 as u32]),
-            "MOUSE9"=> keys.push(vec![Keys::Mouse9 as u32]),
-            "MOUSE10"=> keys.push(vec![Keys::Mouse10 as u32]),
-            "SCROLLLEFT"=> keys.push(vec![Keys::ScrollLeft as u32]),
-            "SCROLLRIGHT"=> keys.push(vec![Keys::ScrollRight as u32]),
-            "SCROLLUP"=> keys.push(vec![Keys::ScrollUp as u32]),
-            "SCROLLDOWN"=> keys.push(vec![Keys::ScrollDown as u32]),
-            _ => debug!("Unknown key {:?} in binding {:?}, ignoring", string, binding),
+/// Parses a binding like "ALT+T" into the key codes that can satisfy each of
+/// its parts, looking every key up in the keyboard layout, so a binding
+/// means the keys the user sees. Characters that need a modifier add it,
+/// e.g. "MOD+&" on a US keyboard is Super+Shift+7. `ALT`, `CTRL`, `SHIFT`,
+/// `MOD` and `ALTGR` accept every key that acts as that modifier.
+pub fn parse_binding(binding: &str, layout: &Layout) -> Result<Vec<Vec<u32>>, String> {
+    let mut parts: Vec<Vec<u32>> = Vec::new();
+    let mut implied: Vec<Modifier> = Vec::new();
+
+    for token in binding.split('+') {
+        let keys = match name(token)? {
+            Name::Modifier(modifier) => modifier_keys(layout, modifier),
+            Name::OneSided(keysym, usual) => match layout.find(keysym) {
+                Some((keys, _)) => keys,
+                None => vec![usual as u32],
+            },
+            Name::Keysym(keysym, shown) => {
+                let (keys, modifiers) = layout.find(keysym).ok_or_else(|| {
+                    format!("no key types {} in your keyboard layout ({})", shown, layout.names().join(", "))
+                })?;
+                implied.extend(modifiers);
+                keys
+            }
+            Name::Pointer(key) => vec![key as u32],
+        };
+        parts.push(sorted(keys));
+    }
+
+    // Add the modifiers characters need, unless the binding already has a
+    // key that acts as that modifier, e.g. SHIFT or LEFTSHIFT.
+    for modifier in implied {
+        let keys = modifier_keys(layout, modifier);
+        if !parts.iter().any(|part| part.iter().all(|key| keys.contains(key))) {
+            parts.push(keys);
         }
     }
+    Ok(parts)
+}
+
+/// What a token in a binding names, case-insensitively.
+fn name(token: &str) -> Result<Name, String> {
+    let upper = token.to_uppercase();
+    let keysym = |sym: Keysym| Ok(Name::Keysym(sym, token.to_string()));
+    match upper.as_str() {
+        "ALT" => Ok(Name::Modifier(Modifier::Alt)),
+        "CTRL" => Ok(Name::Modifier(Modifier::Ctrl)),
+        "SHIFT" => Ok(Name::Modifier(Modifier::Shift)),
+        "MOD" => Ok(Name::Modifier(Modifier::Super)),
+        "ALTGR" => Ok(Name::Modifier(Modifier::AltGr)),
+        "LEFTALT" => Ok(Name::OneSided(Keysym::Alt_L, Keys::LeftAlt)),
+        "RIGHTALT" => Ok(Name::OneSided(Keysym::Alt_R, Keys::RightAlt)),
+        "LEFTCTRL" => Ok(Name::OneSided(Keysym::Control_L, Keys::LeftCtrl)),
+        "RIGHTCTRL" => Ok(Name::OneSided(Keysym::Control_R, Keys::RightCtrl)),
+        "LEFTSHIFT" => Ok(Name::OneSided(Keysym::Shift_L, Keys::LeftShift)),
+        "RIGHTSHIFT" => Ok(Name::OneSided(Keysym::Shift_R, Keys::RightShift)),
+        "LEFTMOD" => Ok(Name::OneSided(Keysym::Super_L, Keys::LeftMod)),
+        "RIGHTMOD" => Ok(Name::OneSided(Keysym::Super_R, Keys::RightMod)),
+        "ESCAPE" => keysym(Keysym::Escape),
+        "ENTER" => keysym(Keysym::Return),
+        "BACKSPACE" => keysym(Keysym::BackSpace),
+        "TAB" => keysym(Keysym::Tab),
+        "SPACE" => keysym(Keysym::space),
+        "UP" => keysym(Keysym::Up),
+        "DOWN" => keysym(Keysym::Down),
+        "LEFT" => keysym(Keysym::Left),
+        "RIGHT" => keysym(Keysym::Right),
+        "HOME" => keysym(Keysym::Home),
+        "END" => keysym(Keysym::End),
+        "PAGEUP" => keysym(Keysym::Prior),
+        "PAGEDOWN" => keysym(Keysym::Next),
+        "INSERT" => keysym(Keysym::Insert),
+        "DELETE" => keysym(Keysym::Delete),
+        "BACKTICK" => keysym(Keysym::grave),
+        "COMMA" => keysym(Keysym::comma),
+        "PERIOD" => keysym(Keysym::period),
+        "SLASH" => keysym(Keysym::slash),
+        "BACKSLASH" => keysym(Keysym::backslash),
+        "SEMICOLON" => keysym(Keysym::semicolon),
+        "QUOTE" => keysym(Keysym::apostrophe),
+        "DASH" => keysym(Keysym::minus),
+        "EQUAL" => keysym(Keysym::equal),
+        "LEFTSQUARE" => keysym(Keysym::bracketleft),
+        "RIGHTSQUARE" => keysym(Keysym::bracketright),
+        // The separator can't be written on its own
+        "PLUS" => keysym(Keysym::plus),
+        "MOUSE1" => Ok(Name::Pointer(Keys::Mouse1)),
+        "MOUSE2" => Ok(Name::Pointer(Keys::Mouse2)),
+        "MOUSE3" => Ok(Name::Pointer(Keys::Mouse3)),
+        "MOUSE4" => Ok(Name::Pointer(Keys::Mouse4)),
+        "MOUSE5" => Ok(Name::Pointer(Keys::Mouse5)),
+        "MOUSE6" => Ok(Name::Pointer(Keys::Mouse6)),
+        "MOUSE7" => Ok(Name::Pointer(Keys::Mouse7)),
+        "MOUSE8" => Ok(Name::Pointer(Keys::Mouse8)),
+        "MOUSE9" => Ok(Name::Pointer(Keys::Mouse9)),
+        "MOUSE10" => Ok(Name::Pointer(Keys::Mouse10)),
+        "SCROLLUP" => Ok(Name::Pointer(Keys::ScrollUp)),
+        "SCROLLDOWN" => Ok(Name::Pointer(Keys::ScrollDown)),
+        "SCROLLLEFT" => Ok(Name::Pointer(Keys::ScrollLeft)),
+        "SCROLLRIGHT" => Ok(Name::Pointer(Keys::ScrollRight)),
+        _ => {
+            // A single character, by the key labelled with it: letters in
+            // either case mean the same key.
+            let mut chars = token.chars();
+            if let (Some(ch), None) = (chars.next(), chars.next()) {
+                let lower = ch.to_lowercase().next().unwrap_or(ch);
+                return keysym(xkb::utf32_to_keysym(lower as u32));
+            }
+            // Any other xkb keysym name, e.g. F13 or XF86AudioMute
+            match xkb::keysym_from_name(token, xkb::KEYSYM_CASE_INSENSITIVE) {
+                sym if sym.raw() != 0 => keysym(sym),
+                _ if token.is_empty() => Err("empty key name (use PLUS for the + key)".to_string()),
+                _ => Err(format!("unknown key name {:?}", token)),
+            }
+        }
+    }
+}
+
+/// The keys that act as a modifier, or the usual ones if the layout has none.
+fn modifier_keys(layout: &Layout, modifier: Modifier) -> Vec<u32> {
+    let keys = layout.keys_for(modifier);
+    if !keys.is_empty() {
+        return keys;
+    }
+    let usual = match modifier {
+        Modifier::Alt => vec![Keys::LeftAlt, Keys::RightAlt],
+        Modifier::Ctrl => vec![Keys::LeftCtrl, Keys::RightCtrl],
+        Modifier::Shift => vec![Keys::LeftShift, Keys::RightShift],
+        Modifier::Super => vec![Keys::LeftMod, Keys::RightMod],
+        Modifier::AltGr => vec![Keys::RightAlt],
+    };
+    usual.into_iter().map(|key| key as u32).collect()
+}
+
+fn sorted(mut keys: Vec<u32>) -> Vec<u32> {
+    keys.sort_unstable();
+    keys.dedup();
     keys
 }
 
-/// Whether a pressed combo (key codes in the order they were pressed)
-/// satisfies a parsed binding.
+/// Whether a pressed combo (held keys and the key just pressed) satisfies a
+/// parsed binding. Each part needs its own key, in any order.
 pub fn matches(binding: &[Vec<u32>], combo: &[u32]) -> bool {
-    binding.len() == combo.len()
-        && binding.iter().zip(combo).all(|(choices, key)| choices.contains(key))
+    fn assign(parts: &[Vec<u32>], keys: &mut Vec<u32>) -> bool {
+        let Some((part, rest)) = parts.split_first() else {
+            return keys.is_empty();
+        };
+        for i in 0..keys.len() {
+            if part.contains(&keys[i]) {
+                let key = keys.remove(i);
+                if assign(rest, keys) {
+                    return true;
+                }
+                keys.insert(i, key);
+            }
+        }
+        false
+    }
+    binding.len() == combo.len() && assign(binding, &mut combo.to_vec())
 }
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
-    #[test]
-    fn test_parse_single_key() {
-        let test_cases = [
-            ("LeftShift", Keys::LeftShift as u32),
-            ("LeftCtrl", Keys::LeftCtrl as u32),
-            ("LeftMod", Keys::LeftMod as u32),
-            ("LeftAlt", Keys::LeftAlt as u32),
-            ("RightShift", Keys::RightShift as u32),
-            ("RightCtrl", Keys::RightCtrl as u32),
-            ("RightMod", Keys::RightMod as u32),
-            ("RightAlt", Keys::RightAlt as u32),
-            ("Space", Keys::Space as u32),
-            ("Enter", Keys::Enter as u32),
-            ("Backspace", Keys::Backspace as u32),
-            ("Tab", Keys::Tab as u32),
-            ("Up", Keys::Up as u32),
-            ("Down", Keys::Down as u32),
-            ("Left", Keys::Left as u32),
-            ("Right", Keys::Right as u32),
-            ("Insert", Keys::Insert as u32),
-            ("Delete", Keys::Delete as u32),
-            ("Home", Keys::Home as u32),
-            ("End", Keys::End as u32),
-            ("PageUp", Keys::PageUp as u32),
-            ("PageDown", Keys::PageDown as u32),
-            ("Comma", Keys::Comma as u32),
-            ("Period", Keys::Period as u32),
-            ("Slash", Keys::Slash as u32),
-            ("LeftSquare", Keys::LeftSquare as u32),
-            ("RightSquare", Keys::RightSquare as u32),
-            ("SemiColon", Keys::SemiColon as u32),
-            ("Quote", Keys::Quote as u32),
-            ("BackSlash", Keys::BackSlash as u32),
-            ("Dash", Keys::Dash as u32),
-            ("Equal", Keys::Equal as u32),
-            ("A", Keys::A as u32),
-            ("B", Keys::B as u32),
-            ("C", Keys::C as u32),
-            ("D", Keys::D as u32),
-            ("E", Keys::E as u32),
-            ("F", Keys::F as u32),
-            ("G", Keys::G as u32),
-            ("H", Keys::H as u32),
-            ("I", Keys::I as u32),
-            ("J", Keys::J as u32),
-            ("K", Keys::K as u32),
-            ("L", Keys::L as u32),
-            ("M", Keys::M as u32),
-            ("N", Keys::N as u32),
-            ("O", Keys::O as u32),
-            ("P", Keys::P as u32),
-            ("Q", Keys::Q as u32),
-            ("R", Keys::R as u32),
-            ("S", Keys::S as u32),
-            ("T", Keys::T as u32),
-            ("U", Keys::U as u32),
-            ("V", Keys::V as u32),
-            ("W", Keys::W as u32),
-            ("X", Keys::X as u32),
-            ("Y", Keys::Y as u32),
-            ("Z", Keys::Z as u32),
-            ("BackTick", Keys::BackTick as u32),
-            ("0", Keys::Num0 as u32),
-            ("1", Keys::Num1 as u32),
-            ("2", Keys::Num2 as u32),
-            ("3", Keys::Num3 as u32),
-            ("4", Keys::Num4 as u32),
-            ("5", Keys::Num5 as u32),
-            ("6", Keys::Num6 as u32),
-            ("7", Keys::Num7 as u32),
-            ("8", Keys::Num8 as u32),
-            ("9", Keys::Num9 as u32),
-            ("F1", Keys::F1 as u32),
-            ("F2", Keys::F2 as u32),
-            ("F3", Keys::F3 as u32),
-            ("F4", Keys::F4 as u32),
-            ("F5", Keys::F5 as u32),
-            ("F6", Keys::F6 as u32),
-            ("F7", Keys::F7 as u32),
-            ("F8", Keys::F8 as u32),
-            ("F9", Keys::F9 as u32),
-            ("F10", Keys::F10 as u32),
-            ("F11", Keys::F11 as u32),
-            ("F12", Keys::F12 as u32),
-            ("F12", Keys::F12 as u32),
-        ];
-
-        for (input, expected_output) in test_cases {
-            assert_eq!(parse_binding(input), vec![vec![expected_output]], "Failed for input: {}", input);
-        }
+    fn us() -> Layout {
+        Layout::from_names("us", "", "", "test").unwrap()
     }
 
-    // Characters like `&` and `_` are bound by the physical key that types them.
-    // Expected values are the raw evdev codes from linux/input-event-codes.h.
-    #[test]
-    fn test_parse_layout_character_bindings() {
-        const KEY_1: u32 = 2;
-        const KEY_7: u32 = 8;
-        const KEY_8: u32 = 9;
-        const KEY_MINUS: u32 = 12;
-        const KEY_LEFTSHIFT: u32 = 42;
-        const KEY_LEFTMETA: u32 = 125;
+    fn parse(binding: &str, layout: &Layout) -> Vec<Vec<u32>> {
+        parse_binding(binding, layout).unwrap()
+    }
 
+    #[test]
+    fn named_keys_on_a_us_keyboard() {
         let test_cases = [
-            // French AZERTY: & and _ are unshifted on the 1 and 8 keys
-            ("MOD+1", vec![KEY_LEFTMETA, KEY_1]),
-            ("MOD+8", vec![KEY_LEFTMETA, KEY_8]),
-            // US QWERTY: & is Shift+7, _ is Shift+-
-            ("MOD+SHIFT+7", vec![KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_7]),
-            ("MOD+SHIFT+DASH", vec![KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_MINUS]),
+            ("LeftShift", Keys::LeftShift),
+            ("LeftCtrl", Keys::LeftCtrl),
+            ("LeftMod", Keys::LeftMod),
+            ("LeftAlt", Keys::LeftAlt),
+            ("RightShift", Keys::RightShift),
+            ("RightCtrl", Keys::RightCtrl),
+            ("RightMod", Keys::RightMod),
+            ("RightAlt", Keys::RightAlt),
+            ("Space", Keys::Space),
+            ("Enter", Keys::Enter),
+            ("Backspace", Keys::Backspace),
+            ("Tab", Keys::Tab),
+            ("Escape", Keys::Escape),
+            ("Up", Keys::Up),
+            ("Down", Keys::Down),
+            ("Left", Keys::Left),
+            ("Right", Keys::Right),
+            ("Insert", Keys::Insert),
+            ("Delete", Keys::Delete),
+            ("Home", Keys::Home),
+            ("End", Keys::End),
+            ("PageUp", Keys::PageUp),
+            ("PageDown", Keys::PageDown),
+            ("Comma", Keys::Comma),
+            ("Period", Keys::Period),
+            ("Slash", Keys::Slash),
+            ("LeftSquare", Keys::LeftSquare),
+            ("RightSquare", Keys::RightSquare),
+            ("SemiColon", Keys::SemiColon),
+            ("Quote", Keys::Quote),
+            ("BackSlash", Keys::BackSlash),
+            ("Dash", Keys::Dash),
+            ("Equal", Keys::Equal),
+            ("BackTick", Keys::BackTick),
+            ("A", Keys::A),
+            ("q", Keys::Q),
+            ("Z", Keys::Z),
+            ("0", Keys::Num0),
+            ("1", Keys::Num1),
+            ("9", Keys::Num9),
+            ("F1", Keys::F1),
+            ("F12", Keys::F12),
+            ("Mouse1", Keys::Mouse1),
+            ("Mouse10", Keys::Mouse10),
+            ("ScrollUp", Keys::ScrollUp),
         ];
 
-        for (input, pressed) in test_cases {
-            assert!(matches(&parse_binding(input), &pressed), "Failed for input: {}", input);
+        let us = us();
+        for (input, expected) in test_cases {
+            assert_eq!(parse(input, &us), vec![vec![expected as u32]], "Failed for input: {}", input);
         }
     }
 
     #[test]
-    fn test_generic_modifiers_match_either_side() {
+    fn keys_follow_the_layout() {
+        let fr = Layout::from_names("fr", "", "", "test").unwrap();
+        let super_keys = vec![Keys::LeftMod as u32, Keys::RightMod as u32];
+        let shift_keys = vec![Keys::LeftShift as u32, Keys::RightShift as u32];
+        // The keys labelled & and _ on AZERTY
+        assert_eq!(parse("MOD+&", &fr), vec![super_keys.clone(), vec![Keys::Num1 as u32]]);
+        assert_eq!(parse("MOD+_", &fr), vec![super_keys.clone(), vec![Keys::Num8 as u32]]);
+        // A is where Q is on QWERTY, and digits need Shift
+        assert_eq!(parse("ALT+A", &fr), vec![vec![Keys::LeftAlt as u32], vec![Keys::Q as u32]]);
+        assert_eq!(parse("MOD+8", &fr), vec![super_keys.clone(), vec![Keys::Num8 as u32], shift_keys]);
+        // @ is AltGr+0
+        assert_eq!(
+            parse("MOD+@", &fr),
+            vec![super_keys, vec![Keys::Num0 as u32], vec![Keys::RightAlt as u32]]
+        );
+    }
+
+    #[test]
+    fn characters_add_the_modifiers_they_need() {
+        let us = us();
+        let super_keys = vec![Keys::LeftMod as u32, Keys::RightMod as u32];
+        let shift_keys = vec![Keys::LeftShift as u32, Keys::RightShift as u32];
+        assert_eq!(parse("MOD+&", &us), vec![super_keys.clone(), vec![Keys::Num7 as u32], shift_keys.clone()]);
+        assert_eq!(parse("MOD+PLUS", &us), vec![super_keys.clone(), vec![Keys::Equal as u32], shift_keys.clone()]);
+        // Writing the modifier as well doesn't add it twice
+        assert_eq!(parse("MOD+SHIFT+_", &us), vec![super_keys.clone(), shift_keys, vec![Keys::Dash as u32]]);
+        assert_eq!(
+            parse("MOD+LEFTSHIFT+_", &us),
+            vec![super_keys, vec![Keys::LeftShift as u32], vec![Keys::Dash as u32]]
+        );
+    }
+
+    #[test]
+    fn keysym_names_can_be_used() {
+        assert_eq!(parse("XF86AudioMute", &us()), vec![vec![113]]); // KEY_MUTE
+        assert_eq!(parse("ALT+XF86AudioRaiseVolume", &us()), vec![vec![56, 100], vec![115]]); // KEY_VOLUMEUP
+    }
+
+    #[test]
+    fn unknown_names_are_an_error() {
+        let us = us();
+        assert_eq!(parse_binding("ALT+NOPE", &us), Err("unknown key name \"NOPE\"".to_string()));
+        assert!(parse_binding("MOD+ж", &us).unwrap_err().starts_with("no key types ж in your keyboard layout"));
+        assert!(parse_binding("MOD++", &us).unwrap_err().contains("use PLUS"));
+    }
+
+    #[test]
+    fn generic_modifiers_match_either_side() {
+        let us = us();
         let test_cases = [
             ("ALT+T", Keys::LeftAlt, Keys::RightAlt),
             ("CTRL+T", Keys::LeftCtrl, Keys::RightCtrl),
@@ -352,14 +404,15 @@ mod tests {
         ];
 
         for (input, left, right) in test_cases {
-            let binding = parse_binding(input);
+            let binding = parse(input, &us);
             assert!(matches(&binding, &[left as u32, Keys::T as u32]), "left side failed for {}", input);
             assert!(matches(&binding, &[right as u32, Keys::T as u32]), "right side failed for {}", input);
         }
     }
 
     #[test]
-    fn test_sided_modifiers_match_one_side() {
+    fn sided_modifiers_match_one_side() {
+        let us = us();
         let test_cases = [
             ("LEFTALT+T", Keys::LeftAlt, Keys::RightAlt),
             ("RIGHTALT+T", Keys::RightAlt, Keys::LeftAlt),
@@ -372,19 +425,20 @@ mod tests {
         ];
 
         for (input, side, other) in test_cases {
-            let binding = parse_binding(input);
+            let binding = parse(input, &us);
             assert!(matches(&binding, &[side as u32, Keys::T as u32]), "{} should match its own side", input);
             assert!(!matches(&binding, &[other as u32, Keys::T as u32]), "{} should not match the other side", input);
         }
     }
 
     #[test]
-    fn test_matches_needs_the_whole_combo_in_order() {
-        let binding = parse_binding("CTRL+ALT+T");
+    fn modifiers_can_be_pressed_in_any_order() {
+        let binding = parse("CTRL+ALT+T", &us());
         let (ctrl, alt, t) = (Keys::LeftCtrl as u32, Keys::RightAlt as u32, Keys::T as u32);
         assert!(matches(&binding, &[ctrl, alt, t]));
-        assert!(!matches(&binding, &[alt, ctrl, t]), "modifiers pressed out of order");
+        assert!(matches(&binding, &[alt, ctrl, t]));
         assert!(!matches(&binding, &[ctrl, t]), "missing a modifier");
         assert!(!matches(&binding, &[ctrl, alt, Keys::LeftShift as u32, t]), "extra modifier");
+        assert!(!matches(&binding, &[ctrl, ctrl, t]), "each part needs its own key");
     }
 }

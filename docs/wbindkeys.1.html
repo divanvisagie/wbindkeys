@@ -100,7 +100,7 @@
     <code class="Fl">--debug</code></dt>
   <dd>Print log output to stderr: which input devices were opened (or could not
       be opened), the configuration file being loaded, each registered binding
-      and the key codes it maps to, unrecognised key names, every key press with
+      and the key codes it maps to, the keyboard layout, every key press with
       its combination, and whether it matched a binding.</dd>
   <dt id="h"><a class="permalink" href="#h"><code class="Fl">-h</code></a>,
     <code class="Fl">--help</code></dt>
@@ -210,12 +210,16 @@ bind(&quot;MOD&quot;, &quot;wofi --show drun&quot;, { on = &quot;release&quot; }
 <p class="Pp">Key names are case-insensitive and joined with &#x2018;+&#x2019;.
     The available names are:</p>
 <dl class="Bl-tag">
+  <dt>Characters</dt>
+  <dd>Any character the keyboard layout can type: A to Z, 0 to 9, &amp;, _, @
+      and so on. PLUS is the + key, since + separates keys.</dd>
   <dt>Modifiers</dt>
-  <dd>ALT, CTRL, SHIFT, MOD (the Super key), SPACE, and the one-sided LEFTALT,
-      LEFTCTRL, LEFTSHIFT, LEFTMOD, RIGHTALT, RIGHTCTRL, RIGHTSHIFT, RIGHTMOD.
-      ALT, CTRL, SHIFT and MOD match the key on either side of the keyboard; the
-      LEFT and RIGHT names match only that side. If a combination matches more
-      than one binding, the one-sided binding wins.</dd>
+  <dd>ALT, CTRL, SHIFT, MOD (the Super key), ALTGR, SPACE, and the one-sided
+      LEFTALT, LEFTCTRL, LEFTSHIFT, LEFTMOD, RIGHTALT, RIGHTCTRL, RIGHTSHIFT,
+      RIGHTMOD. ALT, CTRL, SHIFT, MOD and ALTGR match every key that acts as
+      that modifier, on either side of the keyboard; the LEFT and RIGHT names
+      match only that side. If a combination matches more than one binding, the
+      one-sided binding wins.</dd>
   <dt>Letters, numbers and function keys</dt>
   <dd>A to Z, 0 to 9, F1 to F12.</dd>
   <dt>Navigation</dt>
@@ -225,10 +229,28 @@ bind(&quot;MOD&quot;, &quot;wofi --show drun&quot;, { on = &quot;release&quot; }
       SEMICOLON, QUOTE, DASH, EQUAL, LEFTSQUARE, RIGHTSQUARE.</dd>
   <dt>Mouse</dt>
   <dd>MOUSE1 to MOUSE10, SCROLLUP, SCROLLDOWN, SCROLLLEFT, SCROLLRIGHT.</dd>
+  <dt>Keysyms</dt>
+  <dd>Any other xkb keysym name, such as XF86AudioMute.</dd>
 </dl>
-<p class="Pp">When a binding has several modifiers they must be pressed in the
-    order they are written. Unknown key names are ignored; run with
-    <code class="Fl">--debug</code> to see them.</p>
+<p class="Pp">Keys follow the keyboard layout: a binding means the keys labelled
+    with it, so on a French keyboard ALT+A is the key labelled A. A character
+    that needs Shift or AltGr adds it to the binding: on a US keyboard MOD+&amp;
+    is Super+Shift+7. With several layouts, characters are looked up in the
+    first one, then the others. Modifiers can be pressed in any order. A key
+    name the layout doesn't have is an error at startup.</p>
+<p class="Pp" id="keyboard">The layout is the one the compositor uses. To choose
+    one yourself, call
+    <a class="permalink" href="#keyboard"><code class="Fn">keyboard</code></a>()
+    with the layout names <a class="Xr">localectl(1)</a> uses:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>keyboard{ layout = &quot;fr&quot; }
+keyboard{ layout = &quot;us,se&quot;, options = &quot;caps:swapescape&quot; }</pre>
+</div>
+<p class="Pp">It takes <code class="Cm">layout</code>,
+    <code class="Cm">variant</code> and <code class="Cm">options</code>. Without
+    it and without a compositor, <code class="Nm">wbindkeys</code> uses the US
+    layout. Changes to the layout take effect when
+    <code class="Nm">wbindkeys</code> restarts.</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="PERMISSIONS"><a class="permalink" href="#PERMISSIONS">PERMISSIONS</a></h1>

@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 
+use crate::layout::Layout;
 use crate::parser::{matches, parse_binding, Keys};
 use crate::tracker::Observed;
 
@@ -25,7 +26,8 @@ enum Trigger {
 struct Binding {
     /// The combo as written in the config, e.g. "ALT+T"
     name: String,
-    /// The key codes that can satisfy every part of the combo (see `parse_binding`)
+    /// The key codes that can satisfy every part of the combo, once looked
+    /// up in the layout by `resolve` (see `parse_binding`)
     keys: Vec<Vec<u32>>,
     trigger: Trigger,
     action: Bindtype,
@@ -74,10 +76,19 @@ struct Pending {
     held: Vec<u32>,
 }
 
+/// The layout set with keyboard{ layout = ..., variant = ..., options = ... }
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct KeyboardSetting {
+    pub layout: String,
+    pub variant: String,
+    pub options: String,
+}
+
 pub struct ScriptManager {
     lua: &'static Lua,
     /// Bindings in the order they were registered
     actions: Arc<Mutex<Vec<Binding>>>,
+    keyboard: Arc<Mutex<Option<KeyboardSetting>>>,
     pending: RefCell<Option<Pending>>,
 }
 
@@ -86,7 +97,7 @@ impl ScriptManager {
         let lua = Box::leak(Box::new(Lua::new()));
         let actions = Arc::new(Mutex::new(Vec::new()));
 
-        ScriptManager { lua, actions, pending: RefCell::new(None) }
+        ScriptManager { lua, actions, keyboard: Arc::new(Mutex::new(None)), pending: RefCell::new(None) }
     }
 
     pub fn register_functions(&self) -> Result<(), mlua::Error> {
@@ -95,24 +106,78 @@ impl ScriptManager {
         let basic_bind = self.lua.create_function(
             move |_, (binding, target, options): (String, String, Option<Table>)| {
                 let trigger = parse_options(&binding, options)?;
-                let mut actions_lock = actions_str.lock().unwrap();
-                let keys = parse_binding(&binding);
-                debug!("Registered binding {:?} on {:?} => {:?} (keys: {:?})", binding, trigger, target, keys);
-                let new = Binding { name: binding, keys, trigger, action: Bindtype::Command(target) };
-                // Binding the same combo and trigger again replaces the earlier binding.
-                match actions_lock
-                    .iter_mut()
-                    .find(|existing| existing.keys == new.keys && existing.trigger == new.trigger)
-                {
-                    Some(existing) => *existing = new,
-                    None => actions_lock.push(new),
-                }
+                debug!("Registered binding {:?} on {:?} => {:?}", binding, trigger, target);
+                // Keys are looked up in `resolve`, once the whole config has
+                // run and any keyboard{} setting is known.
+                let new = Binding { name: binding, keys: Vec::new(), trigger, action: Bindtype::Command(target) };
+                actions_str.lock().unwrap().push(new);
                 Ok(())
             },
         )?;
         self.lua.globals().set("bind", basic_bind)?;
 
+        let keyboard = Arc::clone(&self.keyboard);
+        let set_keyboard = self.lua.create_function(move |_, options: Table| {
+            let mut setting = KeyboardSetting::default();
+            for pair in options.pairs::<String, String>() {
+                let (key, value) = pair?;
+                match key.as_str() {
+                    "layout" => setting.layout = value,
+                    "variant" => setting.variant = value,
+                    "options" => setting.options = value,
+                    other => {
+                        return Err(mlua::Error::RuntimeError(format!(
+                            "keyboard: unknown option `{}`, expected `layout`, `variant` or `options`",
+                            other
+                        )))
+                    }
+                }
+            }
+            if setting.layout.is_empty() {
+                return Err(mlua::Error::RuntimeError("keyboard: `layout` is required".to_string()));
+            }
+            *keyboard.lock().unwrap() = Some(setting);
+            Ok(())
+        })?;
+        self.lua.globals().set("keyboard", set_keyboard)?;
+
         Ok(())
+    }
+
+    /// The layout set with keyboard{} in the config, if any.
+    pub fn keyboard(&self) -> Option<KeyboardSetting> {
+        self.keyboard.lock().unwrap().clone()
+    }
+
+    /// Looks every binding's keys up in the layout. A binding with the same
+    /// keys and trigger as an earlier one replaces it. Fails with every
+    /// binding that names a key the layout doesn't have.
+    pub fn resolve(&self, layout: &Layout) -> Result<(), String> {
+        let mut actions = self.actions.lock().unwrap();
+        let mut errors = Vec::new();
+        let mut resolved: Vec<Binding> = Vec::new();
+        for mut binding in actions.drain(..) {
+            match parse_binding(&binding.name, layout) {
+                Ok(keys) => {
+                    debug!("Binding {:?} is keys {:?}", binding.name, keys);
+                    binding.keys = keys;
+                    let same = |existing: &&mut Binding| {
+                        existing.trigger == binding.trigger && same_parts(&existing.keys, &binding.keys)
+                    };
+                    match resolved.iter_mut().find(|existing| same(existing)) {
+                        Some(existing) => *existing = binding,
+                        None => resolved.push(binding),
+                    }
+                }
+                Err(err) => errors.push(format!("bind({:?}): {}", binding.name, err)),
+            }
+        }
+        *actions = resolved;
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors.join("\n"))
+        }
     }
 
     pub fn load_script(&self, script: &str) -> Result<(), mlua::Error> {
@@ -204,6 +269,11 @@ fn parse_options(binding: &str, options: Option<Table>) -> Result<Trigger, mlua:
     Ok(trigger)
 }
 
+/// Whether two bindings have the same parts, in any order.
+fn same_parts(a: &[Vec<u32>], b: &[Vec<u32>]) -> bool {
+    a.len() == b.len() && a.iter().all(|part| b.contains(part))
+}
+
 fn is_scroll(key: u32) -> bool {
     [Keys::ScrollUp, Keys::ScrollDown, Keys::ScrollLeft, Keys::ScrollRight]
         .into_iter()
@@ -229,13 +299,14 @@ mod tests {
         let manager = ScriptManager::new();
         manager.register_functions().unwrap();
         manager.load_script(config).unwrap();
+        manager.resolve(&Layout::from_names("us", "", "", "test").unwrap()).unwrap();
         manager
     }
 
     /// Feeds key presses and releases through a tracker and the manager,
     /// returning the names of everything that fired.
     fn fire(manager: &ScriptManager, events: &[(Keys, KeyState)]) -> Vec<String> {
-        let mut tracker = Tracker::new();
+        let mut tracker = Tracker::new(us_modifiers());
         events
             .iter()
             .flat_map(|(key, state)| manager.handle(&tracker.key(*key as u32, *state)).fired)
@@ -244,6 +315,10 @@ mod tests {
     }
 
     use KeyState::{Pressed as Down, Released as Up};
+
+    fn us_modifiers() -> Vec<u32> {
+        Layout::from_names("us", "", "", "test").unwrap().modifier_keys()
+    }
 
     #[test]
     fn one_sided_binding_wins_over_either_side() {
@@ -261,7 +336,7 @@ mod tests {
     #[test]
     fn release_binding_waits_until_every_key_is_released() {
         let manager = manager(r#"bind("ALT+1", "", { on = "release" })"#);
-        let mut tracker = Tracker::new();
+        let mut tracker = Tracker::new(us_modifiers());
         let mut step = |key: Keys, state| manager.handle(&tracker.key(key as u32, state));
 
         assert!(step(Keys::LeftAlt, Down).fired.is_empty());
@@ -299,5 +374,36 @@ mod tests {
         assert!(err.to_string().contains("must be \"press\" or \"release\""), "{}", err);
         let err = manager.load_script(r#"bind("ALT+T", "", { when = "release" })"#).unwrap_err();
         assert!(err.to_string().contains("unknown option `when`"), "{}", err);
+    }
+
+    #[test]
+    fn keyboard_sets_the_layout() {
+        let manager = manager(r#"keyboard{ layout = "fr", options = "caps:swapescape" }"#);
+        let expected = KeyboardSetting { layout: "fr".into(), variant: String::new(), options: "caps:swapescape".into() };
+        assert_eq!(manager.keyboard(), Some(expected));
+        assert_eq!(manager.keyboard().map(|setting| setting.layout), Some("fr".to_string()));
+
+        let manager = ScriptManager::new();
+        manager.register_functions().unwrap();
+        let err = manager.load_script(r#"keyboard{ layuot = "fr" }"#).unwrap_err();
+        assert!(err.to_string().contains("unknown option `layuot`"), "{}", err);
+    }
+
+    #[test]
+    fn resolve_reports_every_unknown_key() {
+        let manager = ScriptManager::new();
+        manager.register_functions().unwrap();
+        manager.load_script(r#"bind("ALT+NOPE", "") bind("ALT+T", "") bind("MOD+ж", "")"#).unwrap();
+        let err = manager.resolve(&Layout::from_names("us", "", "", "test").unwrap()).unwrap_err();
+        assert!(err.contains("bind(\"ALT+NOPE\")") && err.contains("bind(\"MOD+ж\")"), "{}", err);
+        assert!(!err.contains("ALT+T"), "{}", err);
+    }
+
+    #[test]
+    fn rebinding_the_same_keys_replaces_the_binding() {
+        // Written differently, but the same keys: the later one wins
+        let manager = manager(r#"bind("ALT+CTRL+T", "") bind("CTRL+ALT+T", "")"#);
+        let names: Vec<_> = manager.bindings().into_iter().map(|(name, _, _)| name).collect();
+        assert_eq!(names, ["CTRL+ALT+T"]);
     }
 }
