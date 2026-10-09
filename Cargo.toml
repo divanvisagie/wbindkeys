@@ -1,6 +1,6 @@
 [package]
 name = "wbindkeys"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "A Wayland replacement for xbindkeys: bind keys, mouse buttons and scroll events to commands with a Lua config"
 license = "GPL-2.0-only"
