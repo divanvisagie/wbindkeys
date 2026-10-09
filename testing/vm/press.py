@@ -34,6 +34,8 @@ CASES = [
     ("RightAlt+K", [e.KEY_RIGHTALT, e.KEY_K], {"rightalt-k"}),
     ("Ctrl+Alt+T", [e.KEY_LEFTCTRL, e.KEY_LEFTALT, e.KEY_T], {"ctrl-alt-t"}),
     ("Alt+Ctrl+T (out of order)", [e.KEY_LEFTALT, e.KEY_LEFTCTRL, e.KEY_T], set()),
+    ("RightCtrl alone", [e.KEY_RIGHTCTRL], {"rightctrl"}),
+    ("Shift+Alt", [e.KEY_LEFTSHIFT, e.KEY_LEFTALT], {"shift-alt"}),
 ]
 
 

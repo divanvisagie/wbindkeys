@@ -21,3 +21,7 @@ bind("RIGHTALT+K", mark("rightalt-k"))
 
 -- Modifiers are pressed in the order they are written
 bind("CTRL+ALT+T", mark("ctrl-alt-t"))
+
+-- Combos that are only modifiers
+bind("RIGHTCTRL", mark("rightctrl"))
+bind("SHIFT+ALT", mark("shift-alt"))

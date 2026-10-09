@@ -84,13 +84,17 @@ impl Tracker {
 
     /// Feeds a keyboard key press or release.
     pub fn key(&mut self, key: u32, state: KeyState) -> Observed {
+        // Make the combo before remembering a pressed modifier, so pressing
+        // Alt on its own is [Alt] rather than [Alt, Alt].
+        let observed = self.transition(key, state);
         if MODIFIERS.contains(&key) {
             match state {
-                KeyState::Pressed => self.active_keys.push(key),
+                KeyState::Pressed if !self.active_keys.contains(&key) => self.active_keys.push(key),
+                KeyState::Pressed => {}
                 KeyState::Released => self.active_keys.clear(),
             }
         }
-        self.transition(key, state)
+        observed
     }
 
     /// Feeds a mouse button press or release.
@@ -198,6 +202,19 @@ mod tests {
         press(&mut tracker, Keys::LeftCtrl);
         press(&mut tracker, Keys::LeftAlt);
         assert_eq!(press(&mut tracker, Keys::T), Some(vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32, Keys::T as u32]));
+    }
+
+    #[test]
+    fn a_modifier_on_its_own_is_its_own_combo() {
+        let mut tracker = Tracker::new();
+        assert_eq!(press(&mut tracker, Keys::LeftMod), Some(vec![Keys::LeftMod as u32]));
+    }
+
+    #[test]
+    fn a_combo_can_end_in_a_modifier() {
+        let mut tracker = Tracker::new();
+        press(&mut tracker, Keys::LeftCtrl);
+        assert_eq!(press(&mut tracker, Keys::LeftAlt), Some(vec![Keys::LeftCtrl as u32, Keys::LeftAlt as u32]));
     }
 
     #[test]
