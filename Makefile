@@ -4,7 +4,7 @@ VERSION=$(shell cargo pkgid | sed 's/.*[#@]//')
 
 .DEFAULT_GOAL := help
 
-.PHONY: help all builddep permissions build-debug build-release install clean check run test-run publish-check publish docs
+.PHONY: help all builddep permissions build-debug build-release install clean check run test-run e2e publish-check publish docs
 
 help: ## Show this help
 	@echo "Usage: make <target>"
@@ -49,6 +49,12 @@ run: build-debug ## Build and run with your config
 # this keeps working for local testing even before that has been run.
 test-run: build-debug ## Run against the test config (sudo)
 	XDG_CONFIG_HOME=$(CURDIR)/testing/config sudo --preserve-env=XDG_CONFIG_HOME ./target/debug/$(BIN)
+
+# Runs wbindkeys in an LXD virtual machine (created on first run) and
+# presses key combos on a virtual keyboard there, checking which bindings
+# fire. See testing/vm/e2e.sh for options.
+e2e: build-release ## Run the end-to-end test in an LXD VM
+	./testing/vm/e2e.sh target/release/$(BIN)
 
 install: build-release ## Install to ~/.local/bin and start the user service
 	./scripts/install.sh

@@ -170,3 +170,5 @@ To try your changes:
 - `make test-run` runs it against `testing/config/wbindkeys/init.lua`, where every binding appends a line to `testing/wbindkeys-test.log` instead of launching an app. Watch it with `tail -f testing/wbindkeys-test.log` and press the combos from that file.
 
 Stop the service first (`systemctl --user stop wbindkeys.service`) so the installed copy doesn't also react to your key presses.
+
+`make e2e` runs an end-to-end test without touching your session: it starts wbindkeys in an LXD virtual machine (created on the first run), presses key combos on a virtual keyboard there and checks which bindings fire. It needs [LXD](https://canonical.com/lxd) with virtual machine support; see `testing/vm/e2e.sh` for options.

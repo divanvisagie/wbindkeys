@@ -20,3 +20,4 @@ Cargo.lock
 
 # Local PR testing harness (see testing/config)
 testing/wbindkeys-test.log
+testing/vm/wbindkeys.log
