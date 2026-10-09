@@ -136,6 +136,7 @@ wbindkeys permissions --check          check wbindkeys can read your input devic
 sudo wbindkeys permissions --set       install the udev rule that grants that access
 wbindkeys service --install            start wbindkeys when you log in
 wbindkeys service --uninstall          stop that and remove the service
+wbindkeys record                       record key presses for a bug report, see below
 wbindkeys man                          print the wbindkeys(1) man page
 wbindkeys man --install                install it next to the binary, see below
 wbindkeys --help                       show all options
@@ -154,6 +155,16 @@ wbindkeys --debug
 ```
 
 If the output shows `Failed to open input device ... Permission denied`, or key presses don't show up at all, see [Permissions](#permissions).
+
+## Reporting a key combination that doesn't work
+
+If a binding doesn't fire, record what wbindkeys sees while you press it:
+
+```sh
+wbindkeys record
+```
+
+Press the combination, then Ctrl+C. This saves `wbindkeys-recording.txt` (use `-o` to pick another file), with each key press, what wbindkeys made of it and which binding it would run, plus your wbindkeys version, system, keyboard layout, input devices and bindings (but not their commands). [Open an issue](https://github.com/divanvisagie/wbindkeys/issues) and attach the file. Everything you type while recording is saved, so don't type passwords.
 
 ## Development setup
 

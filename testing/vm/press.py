@@ -6,6 +6,7 @@ Usage: press.py <wbindkeys binary>
 
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -15,6 +16,7 @@ from evdev import UInput, ecodes as e
 HERE = os.path.dirname(os.path.abspath(__file__))
 MARKS = "/tmp/wbindkeys-e2e"
 LOG = os.path.join(HERE, "wbindkeys.log")
+RECORDING = os.path.join(HERE, "recording.txt")
 
 # (combo as pressed, keys in the order they are pressed, markers that should appear)
 CASES = [
@@ -47,13 +49,46 @@ def press(keyboard, keys):
         time.sleep(0.05)
 
 
-def wait_for_log(text, timeout=10):
+def wait_for(path, text, timeout=10):
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if os.path.exists(LOG) and text in open(LOG).read():
+        if os.path.exists(path) and text in open(path).read():
             return True
         time.sleep(0.1)
     return False
+
+
+def check_record(keyboard, binary, env):
+    """Records Super+8 with `wbindkeys record` and checks what was written.
+    Returns the number of failed checks."""
+    if os.path.exists(RECORDING):
+        os.remove(RECORDING)
+    recorder = subprocess.Popen([binary, "record", "-o", RECORDING], env=env,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    started = wait_for(RECORDING, "# device added")
+    time.sleep(1)
+    press(keyboard, [e.KEY_LEFTMETA, e.KEY_8])
+    time.sleep(0.5)
+    recorder.send_signal(signal.SIGINT)
+    status = recorder.wait(timeout=10)
+    text = open(RECORDING).read() if os.path.exists(RECORDING) else ""
+    lines = text.splitlines()
+
+    checks = [
+        ("started", started),
+        ("exited cleanly", status == 0),
+        ("lists the keyboard", any(l.startswith("# device added") and "wbindkeys-e2e keyboard" in l for l in lines)),
+        ("lists bindings", "# binding MOD+8 => [[125,126],[9]]" in lines),
+        ("Super+8 matched MOD+8", any("KEY_8" in l and "[125,9]" in l and l.endswith("MOD+8") for l in lines)),
+        ("finished", any(l.startswith("# stopped after 4 events") for l in lines)),
+    ]
+    failures = 0
+    for name, ok in checks:
+        failures += not ok
+        print(f"[{'ok' if ok else 'FAIL'}] record: {name}")
+    if failures:
+        print("--- recording ---\n" + text)
+    return failures
 
 
 def main():
@@ -68,7 +103,7 @@ def main():
         with open(LOG, "w") as log:
             wbindkeys = subprocess.Popen([binary, "--debug"], stderr=log, env=env)
         try:
-            if not wait_for_log("listening for input events"):
+            if not wait_for(LOG, "listening for input events"):
                 print("wbindkeys did not start, see", LOG)
                 return 1
             time.sleep(1)
@@ -88,10 +123,13 @@ def main():
             wbindkeys.terminate()
             wbindkeys.wait()
 
-    if failures:
-        print(f"\n{failures} of {len(CASES)} cases failed; wbindkeys --debug output is in {LOG}")
+        record_failures = check_record(keyboard, binary, env)
+
+    if failures or record_failures:
+        print(f"\n{failures} of {len(CASES)} cases and {record_failures} record checks failed; "
+              f"wbindkeys --debug output is in {LOG}")
         return 1
-    print(f"\nAll {len(CASES)} cases passed")
+    print(f"\nAll {len(CASES)} cases and record checks passed")
     return 0
 
 

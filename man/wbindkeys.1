@@ -14,6 +14,9 @@
 .Cm service
 .Fl -install | -uninstall
 .Nm
+.Cm record
+.Op Fl o Ar file
+.Nm
 .Cm man
 .Op Fl -install
 .Nm
@@ -85,6 +88,24 @@ with status 1.
 Stop and disable the service and remove what
 .Cm service Fl -install
 set up.
+.It Cm record Op Fl o Ar file
+Record every key press, mouse button and scroll that
+.Nm
+sees, what it made of each one and which binding it would run, until
+.Sy Ctrl+C .
+Use it when a key combination doesn't do what you expect, and attach the
+file to a bug report.
+.Pp
+The recording is written to
+.Pa wbindkeys-recording.txt ,
+or to the file given with
+.Fl o , Fl -output .
+It starts with the
+.Nm
+version, the system, the desktop, the keyboard layout settings, the input
+devices and the bindings in your configuration (without their commands),
+followed by one line per event.
+Everything typed while recording is saved, so don't type passwords.
 .It Cm man Op Fl -install
 Print this manual page.
 With
@@ -241,6 +262,12 @@ Start
 automatically when you log in:
 .Bd -literal -offset indent
 wbindkeys service --install
+.Ed
+.Pp
+Record what happens when a key combination doesn't work, to attach to a bug
+report:
+.Bd -literal -offset indent
+wbindkeys record
 .Ed
 .Pp
 Install this manual page after
